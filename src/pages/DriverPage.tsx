@@ -1,3 +1,4 @@
+import { BRAND_LOGO_SMALL } from '../lib/brand'
 import { useEffect, useMemo, useState } from 'react'
 import { Icon, iconFromEmoji } from '../components/Icon'
 import { useAuth } from '../context/AuthContext'
@@ -29,11 +30,15 @@ function getSavedOdometerAutoRead() {
   }
 }
 
-type Dialog = 'odometer' | 'expense' | 'incident' | 'trip' | 'profile' | 'adhoc' | null
+type Dialog = 'odometer' | 'expense' | 'incident' | 'trip' | 'profile' | 'adhoc' | 'chain-adhoc' | null
+
+// Nối chuyến: chỉ gợi ý trong 12 giờ sau khi kết thúc chuyến trước (khớp RPC chain_trip).
+const CHAIN_WINDOW_MS = 12 * 60 * 60 * 1000
+const CHAIN_DISMISS_KEY = 'bvmsgtv_chain_dismissed'
 
 export function DriverPage() {
   const { user, logout, mode, refreshUser } = useAuth()
-  const { data, loading, online, pending, syncNow, submitOdometer, createExpense, createIncident, createAdhocTrip, updateTrip, updateUser, changeOwnPassword } = useData()
+  const { data, loading, online, pending, syncNow, submitOdometer, createExpense, createIncident, createAdhocTrip, createChainedAdhocTrip, chainTrip, updateTrip, updateUser, changeOwnPassword } = useData()
   const { browserPermission, requestBrowserPermission, refreshBrowserPermission } = useNotifications()
   const [dialog, setDialog] = useState<Dialog>(null)
   const [message, setMessage] = useState<string | null>(null)
@@ -88,6 +93,31 @@ export function DriverPage() {
   const readinessIssues = useMemo(() => vehicleReadinessIssues(vehicle), [vehicle])
   const blockingVehicleIssue = useMemo(() => hasBlockingVehicleIssue(vehicle), [vehicle])
 
+  // ---- Nối chuyến ----
+  const [chainDismissed, setChainDismissed] = useState<string | null>(() => {
+    try { return window.localStorage.getItem(CHAIN_DISMISS_KEY) } catch { return null }
+  })
+  const chainSource = useMemo(() => {
+    if (trips.some((trip) => trip.status === 'active')) return null
+    const used = new Set(data.trips.map((trip) => trip.chained_from_trip_id).filter(Boolean))
+    return trips
+      .filter((trip) => trip.status === 'completed' && trip.end_odometer != null && !used.has(trip.id)
+        && Date.now() - new Date(trip.ended_at ?? trip.updated_at).getTime() <= CHAIN_WINDOW_MS)
+      .sort((a, b) => new Date(b.ended_at ?? b.updated_at).getTime() - new Date(a.ended_at ?? a.updated_at).getTime())[0] ?? null
+  }, [data.trips, trips])
+  const chainCandidates = useMemo(() => chainSource
+    ? trips.filter((trip) => ['assigned', 'accepted', 'ready'].includes(trip.status) && trip.vehicle_id === chainSource.vehicle_id && trip.start_odometer == null).slice(0, 3)
+    : [], [chainSource, trips])
+  const chainVehicle = chainSource ? data.vehicles.find((item) => item.id === chainSource.vehicle_id) ?? null : null
+  const chainBlocked = hasBlockingVehicleIssue(chainVehicle)
+  const showChain = Boolean(chainSource && chainDismissed !== chainSource.id)
+
+  function dismissChain() {
+    if (!chainSource) return
+    setChainDismissed(chainSource.id)
+    try { window.localStorage.setItem(CHAIN_DISMISS_KEY, chainSource.id) } catch { /* bỏ qua */ }
+  }
+
   useEffect(() => {
     if (!driverSetupReady || !currentTrip || currentTrip.status !== 'assigned' || !('serviceWorker' in navigator)) return
     const alertKey = `driver-trip-alerted:${currentTrip.id}:${currentTrip.updated_at}`
@@ -120,6 +150,14 @@ export function DriverPage() {
     }
   }
 
+  async function chainInto(target: Trip) {
+    if (!chainSource) return
+    if (chainBlocked) return setMessage('Xe có cảnh báo nghiêm trọng về trạng thái, đăng kiểm hoặc bảo hiểm. Vui lòng liên hệ Hành chính/Điều phối trước khi nối chuyến.')
+    const km = chainSource.end_odometer?.toLocaleString('vi-VN')
+    if (!window.confirm(`Nối chuyến sang “${target.destination}”?\n\nKM cuối ${km} của chuyến trước sẽ được dùng làm KM đầu và chuyến bắt đầu ngay.`)) return
+    await guarded(async () => { await chainTrip(chainSource.id, target.id) }, `Đã nối chuyến. Đang chạy: ${target.pickup} → ${target.destination}.`)
+  }
+
   async function startTrip() {
     if (!currentTrip) return
     if (blockingVehicleIssue) {
@@ -144,7 +182,7 @@ export function DriverPage() {
     if (currentTrip.start_odometer == null) return setDialog('odometer')
     if (currentTrip.status !== 'active') return void startTrip()
     if (currentTrip.end_odometer == null) return setDialog('odometer')
-    await guarded(async () => { await updateTrip(currentTrip.id, { status: 'completed', ended_at: new Date().toISOString() }) }, 'Chuyến đi đã hoàn thành.')
+    await guarded(async () => { await updateTrip(currentTrip.id, { status: 'completed', ended_at: new Date().toISOString() }) }, 'Chuyến đi đã hoàn thành. Nếu còn chuyến tiếp theo cùng xe, bấm “Nối chuyến” để đi tiếp không cần chụp lại KM.')
   }
 
   function primaryLabel() {
@@ -161,7 +199,7 @@ export function DriverPage() {
       <NetworkBanner />
       <header className="driver-header">
         <div className="driver-header-row">
-          <span className="driver-header-logo"><img src="/logo-bvmsgtv-v201.png" alt="Bệnh viện Mắt Sài Gòn Trà Vinh" /></span>
+          <span className="driver-header-logo"><img src={BRAND_LOGO_SMALL} alt="Bệnh viện Mắt Sài Gòn Trà Vinh" /></span>
           <div className="driver-header-greeting">
             <small>{new Intl.DateTimeFormat('vi-VN', { weekday: 'long', day: '2-digit', month: '2-digit' }).format(new Date())}</small>
             <strong>Xin chào, {user?.profile.full_name.split(' ').slice(-1)[0]}</strong>
@@ -201,9 +239,19 @@ export function DriverPage() {
           <div className={currentTrip.status === 'completed' ? 'done' : ''}><span>4</span><small>Hoàn tất</small></div>
         </section>}
 
+        {showChain && chainSource && <TripChainCard
+          source={chainSource}
+          vehiclePlate={chainVehicle?.plate_number ?? ''}
+          candidates={chainCandidates}
+          saving={saving}
+          onChain={(trip) => void chainInto(trip)}
+          onAdhoc={() => chainBlocked ? setMessage('Xe có cảnh báo nghiêm trọng, không thể tạo chuyến nối.') : setDialog('chain-adhoc')}
+          onDismiss={dismissChain}
+        />}
+
         {loading ? <div className="driver-trip-card skeleton-card" /> : currentTrip ? (
           <article className="driver-trip-card driver-trip-card-modern" onClick={() => setDialog('trip')}>
-            <div className="trip-card-top"><span>{currentTrip.is_adhoc ? 'Chuyến đột xuất' : 'Chuyến đang phụ trách'}</span><StatusBadge status={currentTrip.status} /></div>
+            <div className="trip-card-top"><span>{currentTrip.is_adhoc ? 'Chuyến đột xuất' : 'Chuyến đang phụ trách'}</span>{currentTrip.chained_from_trip_id && <span className="trip-chain-badge"><Icon name="link" size={12} />Chuyến nối</span>}<StatusBadge status={currentTrip.status} /></div>
             <div className="driver-vehicle-line">
               <span><Icon name="bus" size={20} /></span>
               <div><strong>{vehicle?.plate_number ?? 'Chưa gán xe'}</strong><small>{vehicle?.vehicle_name || 'Chưa cập nhật tên xe'}</small></div>
@@ -307,6 +355,15 @@ export function DriverPage() {
         onClose={() => setDialog(null)}
         onSubmit={(input) => guarded(async () => { await createAdhocTrip(input) }, 'Đã tạo chuyến đột xuất. Hãy chụp KM đầu rồi bắt đầu chuyến. Hành chính/Điều phối sẽ xác nhận báo cáo sau.')}
       />}
+      {dialog === 'chain-adhoc' && chainSource && <AdhocTripModal
+        vehicles={data.vehicles}
+        defaultVehicleId={chainSource.vehicle_id}
+        ownTrips={trips}
+        saving={saving}
+        chainFrom={chainSource}
+        onClose={() => setDialog(null)}
+        onSubmit={(input) => guarded(async () => { await createChainedAdhocTrip(chainSource.id, input) }, 'Đã tạo chuyến nối đột xuất và bắt đầu ngay với KM cuối của chuyến trước.')}
+      />}
       {dialog === 'odometer' && currentTrip && <OdometerModal trip={currentTrip} vehicleOdometer={vehicle?.odometer ?? 0} saving={saving} onClose={() => setDialog(null)} onSubmit={(phase, odometer, file) => guarded(async () => {
         if (phase === 'start' && odometer < (vehicle?.odometer ?? 0) - 10) throw new Error('Kilomet đầu nhỏ bất thường so với hồ sơ xe.')
         if (phase === 'end' && odometer < (currentTrip.start_odometer ?? 0)) throw new Error('Kilomet cuối không được nhỏ hơn kilomet đầu.')
@@ -324,6 +381,40 @@ export function DriverPage() {
 }
 
 
+
+function TripChainCard({ source, vehiclePlate, candidates, saving, onChain, onAdhoc, onDismiss }: {
+  source: Trip
+  vehiclePlate: string
+  candidates: Trip[]
+  saving: boolean
+  onChain: (trip: Trip) => void
+  onAdhoc: () => void
+  onDismiss: () => void
+}) {
+  const km = source.end_odometer?.toLocaleString('vi-VN')
+  return <section className="trip-chain-card" aria-label="Nối chuyến">
+    <div className="trip-chain-head">
+      <span><Icon name="link" size={20} /></span>
+      <div><strong>Nối chuyến tiếp theo</strong><small>Đi tiếp ngay bằng xe {vehiclePlate} — dùng KM cuối chuyến vừa xong, không cần quay về bệnh viện hay chụp lại đồng hồ.</small></div>
+    </div>
+    <div className="trip-chain-link">
+      <div><small>Vừa kết thúc</small><strong>{source.destination}</strong><b>{km} km</b></div>
+      <i><Icon name="arrow-right" size={16} /></i>
+      <div><small>Chuyến nối</small><strong>{candidates[0]?.destination ?? 'Chọn bên dưới'}</strong><b>KM đầu = {km}</b></div>
+    </div>
+    <div className="trip-chain-options">
+      {candidates.map((trip) => <button type="button" key={trip.id} className="trip-chain-option" disabled={saving} onClick={() => onChain(trip)}>
+        <div><strong>{trip.pickup} → {trip.destination}</strong><small>{formatDateTime(trip.scheduled_start)} · {PURPOSE_LABELS[trip.purpose]}{trip.status === 'assigned' ? ' · chưa nhận' : ''}</small></div>
+        <span><Icon name="play" size={14} />Nối chuyến</span>
+      </button>)}
+      <button type="button" className="trip-chain-option adhoc" disabled={saving} onClick={onAdhoc}>
+        <div><strong>Chuyến nối đột xuất</strong><small>Đón tại {source.destination} · báo cáo Hành chính sau</small></div>
+        <span><Icon name="zap" size={14} />Tạo</span>
+      </button>
+    </div>
+    <div className="trip-chain-foot"><span>Kết thúc lúc {formatDateTime(source.ended_at ?? source.updated_at)}</span><button type="button" onClick={onDismiss}>Không nối chuyến</button></div>
+  </section>
+}
 
 function DriverPermissionGate({
   notificationPermission,
@@ -483,11 +574,13 @@ function TripDetailModal({ trip, vehicleName, saving, onClose, onCancelAdhoc }: 
 
 const ADHOC_PURPOSES: TripPurpose[] = ['patient_pickup', 'patient_return', 'medicine_supply', 'staff_transport', 'board_business', 'administrative', 'community_exam', 'marketing_care', 'personal_other']
 
-function AdhocTripModal({ vehicles, defaultVehicleId, ownTrips, saving, onClose, onSubmit }: {
+function AdhocTripModal({ vehicles, defaultVehicleId, ownTrips, saving, chainFrom = null, onClose, onSubmit }: {
   vehicles: Vehicle[]
   defaultVehicleId: string | null
   ownTrips: Trip[]
   saving: boolean
+  /** Có giá trị khi tạo chuyến nối: khóa xe và lấy điểm đến chuyến trước làm điểm đón. */
+  chainFrom?: Trip | null
   onClose: () => void
   onSubmit: (input: CreateAdhocTripInput) => void
 }) {
@@ -499,7 +592,7 @@ function AdhocTripModal({ vehicles, defaultVehicleId, ownTrips, saving, onClose,
     return {
       vehicle_id: initialVehicle,
       purpose: 'patient_pickup' as TripPurpose,
-      pickup: 'Bệnh viện Mắt Sài Gòn Trà Vinh',
+      pickup: chainFrom?.destination ?? 'Bệnh viện Mắt Sài Gòn Trà Vinh',
       destination: '',
       adhoc_reason: '',
       contact_name: '',
@@ -546,10 +639,11 @@ function AdhocTripModal({ vehicles, defaultVehicleId, ownTrips, saving, onClose,
     })
   }
 
-  return <Modal title="Tạo chuyến đột xuất" onClose={onClose}>
+  return <Modal title={chainFrom ? 'Tạo chuyến nối đột xuất' : 'Tạo chuyến đột xuất'} onClose={onClose}>
+    {chainFrom && <div className="adhoc-flow-note"><strong><Icon name="link" size={15} />Nối tiếp từ {chainFrom.destination}</strong><span>Chuyến mới dùng KM cuối {chainFrom.end_odometer?.toLocaleString('vi-VN')} của chuyến trước làm KM đầu và bắt đầu ngay, không cần chụp lại đồng hồ.</span></div>}
     <div className="adhoc-flow-note"><strong><Icon name="zap" size={15} />Đi ngay, báo cáo sau</strong><span>Chuyến được tạo ở trạng thái “Đã nhận”. Tài xế chụp KM đầu → bắt đầu → chụp KM cuối như chuyến thường. Hành chính/Điều phối sẽ nhận thông báo và xác nhận báo cáo sau.</span></div>
     <form className="adhoc-trip-form" onSubmit={submit}>
-      <label>Xe sử dụng<select value={form.vehicle_id} onChange={(event) => setForm({ ...form, vehicle_id: event.target.value })} required>{eligibleVehicles.map((item) => <option key={item.id} value={item.id}>{item.plate_number} — {item.vehicle_name}{item.status === 'in_use' ? ' (đang chạy)' : ''}</option>)}</select></label>
+      <label>Xe sử dụng<select value={form.vehicle_id} onChange={(event) => setForm({ ...form, vehicle_id: event.target.value })} disabled={Boolean(chainFrom)} required>{eligibleVehicles.map((item) => <option key={item.id} value={item.id}>{item.plate_number} — {item.vehicle_name}{item.status === 'in_use' ? ' (đang chạy)' : ''}</option>)}</select></label>
       {selectedVehicle?.status === 'in_use' && <div className="form-warning">Xe này đang được ghi nhận là đang chạy. Kiểm tra lại trước khi tạo chuyến.</div>}
       <label>Loại chuyến<select value={form.purpose} onChange={(event) => setForm({ ...form, purpose: event.target.value as TripPurpose })}>{ADHOC_PURPOSES.map((key) => <option key={key} value={key}>{PURPOSE_LABELS[key]}</option>)}</select></label>
       <label>Lý do phát sinh / người yêu cầu *<textarea value={form.adhoc_reason} onChange={(event) => setForm({ ...form, adhoc_reason: event.target.value })} placeholder="Ví dụ: BS. An yêu cầu đón bệnh nhân cấp cứu tại xã Hòa Thuận" required /></label>
@@ -567,7 +661,7 @@ function AdhocTripModal({ vehicles, defaultVehicleId, ownTrips, saving, onClose,
       <label>Ghi chú<textarea value={form.notes} onChange={(event) => setForm({ ...form, notes: event.target.value })} placeholder="Thông tin thêm cho Hành chính/Điều phối" /></label>
       {!eligibleVehicles.length && <div className="form-error">Không có xe đủ điều kiện sử dụng.</div>}
       {error && <div className="form-error">{error}</div>}
-      <button className="primary-button full" disabled={saving || !eligibleVehicles.length}>{saving ? 'Đang tạo chuyến...' : 'Tạo chuyến & bắt đầu chuẩn bị'}</button>
+      <button className="primary-button full" disabled={saving || !eligibleVehicles.length}>{saving ? 'Đang tạo chuyến...' : chainFrom ? 'Tạo chuyến nối & bắt đầu ngay' : 'Tạo chuyến & bắt đầu chuẩn bị'}</button>
     </form>
   </Modal>
 }

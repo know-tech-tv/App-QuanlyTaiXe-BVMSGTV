@@ -109,28 +109,39 @@ function mockState(deviceId) {
   const lat = numberOrNull(process.env.NAVICOM_MOCK_LAT)
   const lng = numberOrNull(process.env.NAVICOM_MOCK_LNG)
   const count = Math.max(0, Number(process.env.NAVICOM_MOCK_CHANNELS || 2))
+  // NAVICOM_MOCK_CYCLE_SECONDS=60: xe luân phiên tắt máy/nổ máy để kiểm thử camera tự kết nối lại.
+  const cycleSeconds = Number(process.env.NAVICOM_MOCK_CYCLE_SECONDS || 0)
+  const nowMs = Date.now()
+  const phase = cycleSeconds > 0 ? Math.floor(nowMs / (cycleSeconds * 1000)) : 0
+  const online = cycleSeconds > 0 ? phase % 2 === 0 : true
+  const phaseStart = new Date(cycleSeconds > 0 ? phase * cycleSeconds * 1000 : nowMs).toISOString()
+  const gpsAt = online ? new Date(nowMs).toISOString() : phaseStart
+  const playerTemplate = process.env.NAVICOM_MOCK_PLAYER_URL || ''
   return {
     device_id: deviceId,
     device_name: `Thiết bị ${deviceId}`,
-    online: true,
+    online,
+    online_source: 'cmsv6-status',
+    online_since: phaseStart,
     gps: {
       lat,
       lng,
-      speed_kph: Number(process.env.NAVICOM_MOCK_SPEED || 0),
+      speed_kph: online ? Number(process.env.NAVICOM_MOCK_SPEED || 0) : 0,
       heading: null,
-      ignition: true,
-      updated_at: new Date().toISOString(),
+      ignition: online,
+      updated_at: gpsAt,
       address: process.env.NAVICOM_MOCK_ADDRESS || null,
     },
     channels: Array.from({ length: count }, (_, index) => ({
       id: String(index + 1),
       label: index === 0 ? 'Camera trước' : index === 1 ? 'Camera cabin' : `Camera ${index + 1}`,
-      online: true,
-      player_url: null,
+      online,
+      player_url: playerTemplate ? renderTemplate(playerTemplate, { deviceId, channel: String(index) }) : null,
+      external_url: null,
       hls_url: null,
       snapshot_url: null,
     })),
-    updated_at: new Date().toISOString(),
+    updated_at: gpsAt,
     source: 'mock',
     message: 'Chế độ mô phỏng. Chưa kết nối API Navicom thật.',
   }

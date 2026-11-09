@@ -39,6 +39,8 @@ interface DataContextValue {
   createAdhocTrip(input: CreateAdhocTripInput): Promise<Trip>
   reviewAdhocTrip(id: string, status: Exclude<AdhocReportStatus, 'pending_review'>, note?: string): Promise<Trip>
   updateTrip(id: string, changes: Partial<Trip>): Promise<Trip>
+  chainTrip(fromTripId: string, toTripId: string): Promise<Trip>
+  createChainedAdhocTrip(fromTripId: string, input: CreateAdhocTripInput): Promise<Trip>
   updateTripLocation(id: string, lat: number, lng: number): Promise<Trip>
   deleteTrip(id: string): Promise<void>
   createChecklist(input: Omit<Checklist, 'id' | 'created_at'>): Promise<Checklist>
@@ -165,6 +167,12 @@ export function DataProvider({ children }: { children: ReactNode }) {
     createAdhocTrip: (input) => run(() => backend.createAdhocTrip(input, user!.id)),
     reviewAdhocTrip: (id, status, note) => run(() => backend.reviewAdhocTrip(id, status, note)),
     updateTrip: (id, changes) => run(() => backend.updateTrip(id, changes)),
+    chainTrip: (fromTripId, toTripId) => run(() => backend.chainTrip(fromTripId, toTripId)),
+    // Chuyến nối đột xuất: tạo chuyến đột xuất (đã nhận) rồi nối KM từ chuyến trước.
+    createChainedAdhocTrip: (fromTripId, input) => run(async () => {
+      const created = await backend.createAdhocTrip(input, user!.id)
+      return await backend.chainTrip(fromTripId, created.id)
+    }),
     updateTripLocation,
     deleteTrip: (id) => run(() => backend.deleteTrip(id)),
     createChecklist: (input) => run(() => backend.createChecklist(input)),

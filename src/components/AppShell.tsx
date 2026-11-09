@@ -1,3 +1,4 @@
+import { BRAND_LOGO_SMALL } from '../lib/brand'
 import { useEffect, useState, type ReactNode } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { ROLE_LABELS } from '../lib/constants'
@@ -163,7 +164,7 @@ export function AppShell({ page, onPage, children }: { page: PageKey; onPage: (p
       <NavicomFleetWatcher />
       <aside className="sidebar" aria-label="Điều hướng chính">
         <button type="button" className="sidebar-brand" onClick={() => onPage(homePage)} aria-label="Về trang chủ">
-          <span className="sidebar-brand-logo"><img src="/logo-bvmsgtv-v201.png" alt="" /></span>
+          <span className="sidebar-brand-logo"><img src={BRAND_LOGO_SMALL} alt="" /></span>
           <span className="sidebar-brand-copy"><strong>Điều phối xe</strong><small>BV Mắt Sài Gòn Trà Vinh</small></span>
         </button>
 
@@ -211,7 +212,7 @@ export function AppShell({ page, onPage, children }: { page: PageKey; onPage: (p
         <NetworkBanner />
         <header className="topbar">
           <div className="topbar-mobile-brand">
-            <button type="button" onClick={() => onPage(homePage)} aria-label="Về trang chủ"><img src="/logo-bvmsgtv-v201.png" alt="" /></button>
+            <button type="button" onClick={() => onPage(homePage)} aria-label="Về trang chủ"><img src={BRAND_LOGO_SMALL} alt="" /></button>
           </div>
           <div className="topbar-heading">
             <nav className="page-breadcrumb" aria-label="Đường dẫn trang">

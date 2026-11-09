@@ -14,7 +14,7 @@
 .bvmsgtv-leaflet-plate{margin-top:2px;background:#213f36;color:#fff;border-radius:5px;padding:2px 6px;font-weight:800;font-size:10px;white-space:nowrap;box-shadow:0 2px 6px rgba(0,0,0,.17)}
 .bvmsgtv-leaflet-marker.is-selected .bvmsgtv-leaflet-car{box-shadow:0 0 0 5px rgba(15,139,108,.2),0 4px 14px rgba(0,0,0,.24);transform:scale(1.1)}
 .fleet-map-progress{position:absolute;inset:0;z-index:700;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:9px;padding:24px;text-align:center;color:#3e5c53;background:rgba(240,247,244,.92)}
-.fleet-map-progress strong{font-size:14px}.fleet-map-progress span{font-size:12px;line-height:1.5;max-width:350px}.fleet-map-progress button{padding:10px 17px;background:#0f8269;border:0;color:white;border-radius:10px;font-weight:800;font-size:12px}
+.fleet-map-progress strong{font-size:14px}.fleet-map-progress span{font-size:12px;line-height:1.5;max-width:350px}.fleet-map-progress button{padding:10px 17px;background:#2f5fc4;border:0;color:white;border-radius:10px;font-weight:800;font-size:12px}
 .fleet-smooth-map-spinner{width:26px;height:26px;border:3px solid #b8dbcb;border-top-color:#0b8a6a;border-radius:50%;animation:fleetMapSpin .9s linear infinite}@keyframes fleetMapSpin{to{transform:rotate(360deg)}}
 .fleet-smooth-map-toolbar{z-index:550;position:absolute;top:106px;right:11px;display:grid;gap:6px}
 .fleet-smooth-map-toolbar button{width:40px;height:39px;border:1px solid #d8e6e0;border-radius:11px;background:#fff;box-shadow:0 3px 10px rgba(0,0,0,.1);font-size:22px;color:#234a3f;font-weight:800;cursor:pointer}

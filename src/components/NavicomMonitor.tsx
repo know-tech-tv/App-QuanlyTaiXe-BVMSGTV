@@ -1,7 +1,8 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { Vehicle } from '../types/models'
 import { Icon } from './Icon'
-import { enterLandscapeFullscreen, exitLandscapeFullscreen, fullscreenElement } from '../lib/cameraFullscreen'
+import { NavicomCameraPane } from './NavicomCameraPane'
+import { GATEWAY_FAILURES_BEFORE_ERROR, useCameraLifecycle } from '../lib/navicomCamera'
 import { formatDateTime } from '../lib/utils'
 import { fetchNavicomVehicleState, type NavicomCameraChannel, type NavicomVehicleState } from '../lib/navicom'
 
@@ -13,6 +14,7 @@ export function NavicomMonitor({ vehicle, compact = false }: { vehicle: Vehicle 
   const [error, setError] = useState<string | null>(null)
   const [cameraMode, setCameraMode] = useState<'both' | 'front' | 'cabin'>('both')
   const [refreshKey, setRefreshKey] = useState(0)
+  const [failures, setFailures] = useState(0)
 
   const deviceId = vehicle?.navicom_device_id?.trim() ?? ''
   const navicomEnabled = Boolean(vehicle?.navicom_enabled)
@@ -36,9 +38,11 @@ export function NavicomMonitor({ vehicle, compact = false }: { vehicle: Vehicle 
         if (stopped) return
         setState(next)
         setError(null)
+        setFailures(0)
       } catch (err) {
         if (stopped || (err instanceof DOMException && err.name === 'AbortError')) return
         setError(err instanceof Error ? err.message : String(err))
+        setFailures((value) => value + 1)
       } finally {
         if (!stopped) setLoading(false)
       }
@@ -66,11 +70,11 @@ export function NavicomMonitor({ vehicle, compact = false }: { vehicle: Vehicle 
 
   return <section className={`navicom-monitor ${compact ? 'compact' : ''}`}>
     <div className="navicom-monitor-head">
-      <div><span className={`navicom-brand-dot ${state?.online ? 'online' : ''}`} /><div><strong>Navicom · {vehicle.plate_number}</strong><small>{loading && !state ? 'Đang kết nối thiết bị...' : state?.online ? 'GPS Navicom đang cập nhật trực tiếp' : state?.gps?.updated_at ? 'Có vị trí GPS gần nhất · camera có thể đang ngoại tuyến' : 'Chưa có dữ liệu GPS mới'}</small></div></div>
+      <div><span className={`navicom-brand-dot ${state?.online ? 'online' : ''}`} /><div><strong>Navicom · {vehicle.plate_number}</strong><small>{loading && !state ? 'Đang kết nối thiết bị...' : state?.online ? 'Thiết bị online · GPS & camera đang cập nhật trực tiếp' : state?.gps?.updated_at ? 'Xe đang tắt máy · camera tự kết nối lại khi xe khởi động' : 'Chưa có dữ liệu GPS mới'}</small></div></div>
       <button type="button" className="navicom-refresh-button" onClick={() => setRefreshKey((value) => value + 1)} aria-label="Làm mới Navicom"><Icon name="refresh" size={15} /></button>
     </div>
 
-    {error && <div className="navicom-error"><Icon name="alert" size={15} /><span>{error}</span></div>}
+    {error && failures >= GATEWAY_FAILURES_BEFORE_ERROR && <div className="navicom-error"><Icon name="alert" size={15} /><span>{error}</span></div>}
     {state?.message && <div className="navicom-mode-note"><Icon name="alert" size={15} /><span>{state.message}</span></div>}
 
     {state && <>
@@ -91,7 +95,7 @@ export function NavicomMonitor({ vehicle, compact = false }: { vehicle: Vehicle 
         compact={compact}
       />}
 
-      {!compact && <CameraViewer channels={state.channels ?? []} mode={cameraMode} onMode={setCameraMode} deviceOnline={navicomStateIsFresh(state)} />}
+      {!compact && <CameraViewer key={deviceId} state={state} failures={failures} error={error} mode={cameraMode} onMode={setCameraMode} />}
     </>}
   </section>
 }
@@ -140,19 +144,15 @@ function NavicomRealtimeMap({ lat, lng, plateNumber, speedKph, updatedAt, addres
   </section>
 }
 
-function navicomStateIsFresh(state: NavicomVehicleState | null | undefined) {
-  const value = state?.gps.updated_at || state?.updated_at
-  if (!value) return false
-  const stamp = new Date(value).getTime()
-  return Number.isFinite(stamp) && Date.now() - stamp <= 2 * 60_000
-}
+function CameraViewer({ state, failures, error, mode, onMode }: { state: NavicomVehicleState; failures: number; error: string | null; mode: 'both' | 'front' | 'cabin'; onMode: (mode: 'both' | 'front' | 'cabin') => void }) {
+  // Trước v3.0.0 camera bị chặn khi GPS cũ hơn 2 phút → xe vừa nổ máy (GPS lịch sử
+  // về chậm) luôn hiện "Xe đang offline". Nay dùng trạng thái online thật từ gateway.
+  const camera = useCameraLifecycle(state, failures)
+  const channels = (state.channels ?? []).slice(0, 2)
+  if (!channels.length) return <div className="navicom-camera-empty"><Icon name="camera" size={18} /><span>Thiết bị chưa trả về kênh camera.</span></div>
+  const gatewayError = failures >= GATEWAY_FAILURES_BEFORE_ERROR ? error : null
+  const pane = (channel: NavicomCameraChannel | null, title: string) => <NavicomCameraPane channel={channel} title={title} liveness={camera.liveness} epoch={camera.epoch} waking={camera.waking} gatewayError={gatewayError} onReload={camera.reload} className="navicom-camera-pane" />
 
-function CameraViewer({ channels, mode, onMode, deviceOnline }: { channels: NavicomCameraChannel[]; mode: 'both' | 'front' | 'cabin'; onMode: (mode: 'both' | 'front' | 'cabin') => void; deviceOnline: boolean }) {
-  const twoChannels = channels.slice(0, 2)
-  if (!twoChannels.length) return <div className="navicom-camera-empty"><Icon name="camera" size={18} /><span>Thiết bị chưa trả về kênh camera.</span></div>
-
-  const front = twoChannels[0] ?? null
-  const cabin = twoChannels[1] ?? null
   return <div className="navicom-camera-block dual-camera-viewer">
     <div className="navicom-camera-tabs dual" role="tablist">
       <button type="button" className={mode === 'both' ? 'active' : ''} onClick={() => onMode('both')}>Cả 2 camera</button>
@@ -160,67 +160,8 @@ function CameraViewer({ channels, mode, onMode, deviceOnline }: { channels: Navi
       <button type="button" className={mode === 'cabin' ? 'active' : ''} onClick={() => onMode('cabin')}>Camera cabin</button>
     </div>
     <div className={`navicom-dual-player mode-${mode}`}>
-      {(mode === 'both' || mode === 'front') && <NavicomCameraPane channel={front} fallbackLabel="Camera trước" deviceOnline={deviceOnline} />}
-      {(mode === 'both' || mode === 'cabin') && <NavicomCameraPane channel={cabin} fallbackLabel="Camera cabin" deviceOnline={deviceOnline} />}
+      {(mode === 'both' || mode === 'front') && pane(channels[0] ?? null, 'Camera trước')}
+      {(mode === 'both' || mode === 'cabin') && pane(channels[1] ?? null, 'Camera cabin')}
     </div>
   </div>
-}
-
-function NavicomCameraPane({ channel, fallbackLabel, deviceOnline }: { channel: NavicomCameraChannel | null; fallbackLabel: string; deviceOnline: boolean }) {
-  const label = channel?.label || fallbackLabel
-  const paneRef = useRef<HTMLElement | null>(null)
-  const [expanded, setExpanded] = useState(false)
-  const [forceLandscape, setForceLandscape] = useState(false)
-
-  useEffect(() => {
-    if (!expanded) return
-    const previousOverflow = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
-    const handleFullscreen = () => {
-      if (!fullscreenElement()) {
-        setExpanded(false)
-        setForceLandscape(false)
-      }
-    }
-    document.addEventListener('fullscreenchange', handleFullscreen)
-    document.addEventListener('webkitfullscreenchange', handleFullscreen as EventListener)
-    return () => {
-      document.body.style.overflow = previousOverflow
-      document.removeEventListener('fullscreenchange', handleFullscreen)
-      document.removeEventListener('webkitfullscreenchange', handleFullscreen as EventListener)
-    }
-  }, [expanded])
-
-  const toggleFullscreen = async () => {
-    if (expanded) {
-      await exitLandscapeFullscreen()
-      setExpanded(false)
-      setForceLandscape(false)
-      return
-    }
-    setExpanded(true)
-    const element = paneRef.current
-    if (!element) return
-    const result = await enterLandscapeFullscreen(element)
-    setForceLandscape(!result.orientationLocked)
-  }
-
-  return <article ref={paneRef} className={`navicom-camera-pane ${expanded ? 'camera-landscape-expanded' : ''} ${forceLandscape ? 'camera-force-landscape' : ''}`}>
-    <header>
-      <div><span className={channel?.online === false ? 'offline' : channel?.online === true ? 'online' : 'unknown'} /><strong>{label}</strong></div>
-      <div className="navicom-camera-actions">
-        {deviceOnline && channel?.online !== false && channel?.external_url && <a href={channel.external_url} target="_blank" rel="noreferrer">Mở riêng</a>}
-        <button type="button" onClick={() => void toggleFullscreen()}>{expanded ? 'Thoát' : 'Phóng to ngang'}</button>
-      </div>
-    </header>
-    <div className={`navicom-player ${!deviceOnline || channel?.online === false ? 'is-offline' : ''}`}>
-      {!deviceOnline ? <div className="navicom-camera-offline"><Icon name="cloud-off" size={22} /><strong>Xe đang offline</strong><span>Không mở luồng camera Navicom khi thiết bị ngoại tuyến.</span></div>
-        : channel?.online === false ? <div className="navicom-camera-offline"><Icon name="cloud-off" size={22} /><strong>Kênh camera ngoại tuyến</strong><span>Vui lòng thử lại khi thiết bị có tín hiệu.</span></div>
-          : channel?.player_url ? <iframe title={`Camera ${label}`} src={channel.player_url} allow="autoplay; fullscreen; picture-in-picture" />
-            : channel?.hls_url ? <video src={channel.hls_url} controls autoPlay muted playsInline />
-              : channel?.snapshot_url ? <img src={channel.snapshot_url} alt={`Camera ${label}`} />
-                : <div className="navicom-camera-empty"><Icon name="camera" size={18} /><strong>{label} chưa khả dụng</strong><span>Gateway chưa cung cấp URL video.</span></div>}
-    </div>
-    {expanded && forceLandscape && <div className="camera-rotate-hint">Đang hiển thị ngang để xem camera rõ hơn</div>}
-  </article>
 }

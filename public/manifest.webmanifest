@@ -1,24 +1,16 @@
 {
-  "name": "Điều phối xe Bệnh viện mắt Sài Gòn Trà Vinh",
+  "name": "Điều phối xe Bệnh viện Mắt Sài Gòn Trà Vinh",
   "short_name": "Điều phối xe",
-  "description": "Hệ thống điều phối và quản lý đội xe Bệnh viện mắt Sài Gòn Trà Vinh",
+  "description": "Hệ thống điều phối và quản lý đội xe Bệnh viện Mắt Sài Gòn Trà Vinh",
   "start_url": "./",
   "display": "standalone",
-  "background_color": "#edf5f1",
-  "theme_color": "#087344",
+  "background_color": "#f3f5fb",
+  "theme_color": "#15195a",
   "lang": "vi",
   "icons": [
-    {
-      "src": "icons/icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "icons/icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any maskable"
-    }
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-maskable-192.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ]
 }

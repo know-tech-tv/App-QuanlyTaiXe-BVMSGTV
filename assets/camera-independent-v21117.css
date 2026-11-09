@@ -1,7 +1,0 @@
-/* v2.11.17 – Camera độc lập GPS, trải nghiệm mobile */
-.camera-retry-button{margin-top:12px;border:1px solid #0b866b;background:#087965;color:white;border-radius:10px;min-height:42px;padding:9px 18px;font-size:14px;font-weight:700;cursor:pointer}
-.camera-check-availability{gap:9px!important;text-align:center;padding:25px 14px!important}
-.camera-check-availability strong{font-size:16px!important;color:#23433b}
-.camera-check-availability span{font-size:13px!important;line-height:1.5!important;max-width:400px}
-.fleet-smooth-tile-error{position:absolute!important;left:50%!important;top:56px!important;bottom:auto!important;transform:translateX(-50%);padding:7px 12px!important;max-width:min(90%,410px)!important;z-index:600!important;border-radius:9px!important;pointer-events:none;font-size:12px!important;line-height:1.45!important}
-@media(max-width:600px){.fleet-smooth-tile-error{top:64px!important;max-width:72%!important;font-size:11px!important}.fleet-camera-frame,.navicom-player{min-height:210px}.camera-retry-button{min-height:46px;font-size:15px}}

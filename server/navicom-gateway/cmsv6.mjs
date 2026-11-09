@@ -408,14 +408,78 @@ export async function cmsv6ListVehicles() {
   }
 }
 
+// ---------------------------------------------------------------------------
+// Trạng thái online THỰC của thiết bị (v3.0.0)
+// Trước đây "online" chỉ suy ra từ lịch sử GPS (queryTrackDetail). Khi xe vừa nổ
+// máy, lịch sử GPS thường về chậm 1–3 phút nên app coi xe offline và camera không
+// hiện. CMSV6 có API trạng thái realtime: getDeviceOlStatus (online/offline) và
+// getDeviceStatus (vị trí tức thời). Hai API này là tùy chọn: nếu máy chủ không hỗ
+// trợ, gateway quay về cách cũ.
+// ---------------------------------------------------------------------------
+const onlineHistory = new Map()
+
+function asArray(value) {
+  return Array.isArray(value) ? value : value && typeof value === 'object' ? [value] : []
+}
+
+function matchesDevice(item, deviceId) {
+  const ids = [item?.did, item?.devIdno, item?.devIdNo, item?.id, item?.idno].filter((value) => value != null).map(String)
+  return ids.length === 0 || ids.includes(String(deviceId))
+}
+
+async function queryRealtimeStatus(session, deviceId) {
+  if (!boolEnv('NAVICOM_CMSV6_REALTIME_STATUS', true)) return { online: null, status: null }
+  const timeout = numberEnv('NAVICOM_CMSV6_STATUS_TIMEOUT_MS', 6000)
+  const [olResult, statusResult] = await Promise.allSettled([
+    fetchJson(buildActionUrl(session.apiRoot, 'StandardApiAction_getDeviceOlStatus.action', { devIdno: deviceId, jsession: session.jsession }), timeout),
+    fetchJson(buildActionUrl(session.apiRoot, 'StandardApiAction_getDeviceStatus.action', { devIdno: deviceId, toMap: env('NAVICOM_CMSV6_MAP_TYPE', '1'), geoaddress: '1', jsession: session.jsession }), timeout),
+  ])
+
+  let online = null
+  if (olResult.status === 'fulfilled' && resultCode(olResult.value.data) === 0) {
+    const row = asArray(olResult.value.data.onlines).find((item) => matchesDevice(item, deviceId))
+    const raw = row?.online ?? row?.ol
+    if (raw != null) online = Number(raw) === 1 || raw === true
+  }
+
+  let status = null
+  if (statusResult.status === 'fulfilled' && resultCode(statusResult.value.data) === 0) {
+    status = asArray(statusResult.value.data.status).find((item) => matchesDevice(item, deviceId)) ?? null
+    if (online == null && status && status.ol != null) online = Number(status.ol) === 1
+  }
+  return { online, status }
+}
+
+function trackOnlineTransition(deviceId, online) {
+  const previous = onlineHistory.get(deviceId)
+  const now = new Date().toISOString()
+  if (!previous || previous.online !== online) {
+    const next = { online, since: now }
+    onlineHistory.set(deviceId, next)
+    return next
+  }
+  return previous
+}
+
 export async function cmsv6VehicleState(deviceId, options = {}) {
   const requestedCount = Number(options.channelCount)
   const configuredCount = Number.isFinite(requestedCount) && requestedCount > 0 ? requestedCount : numberEnv('NAVICOM_CMSV6_CHANNELS', 2)
   const channelCount = Math.min(2, Math.max(1, configuredCount))
-  const { session, latest, rawResult, trackCount } = await queryLatestTrack(deviceId)
+  const { session, latest: trackLatest, rawResult, trackCount } = await queryLatestTrack(deviceId)
+  const realtime = await queryRealtimeStatus(session, deviceId).catch(() => ({ online: null, status: null }))
+
+  // Dùng điểm GPS mới hơn giữa trạng thái realtime và lịch sử hành trình.
+  const trackAt = trackLatest ? trackTimestamp(trackLatest) : null
+  const statusAt = realtime.status ? trackTimestamp(realtime.status) : null
+  const statusHasCoords = realtime.status && firstCoordinate(realtime.status, 'lat') != null && firstCoordinate(realtime.status, 'lng') != null
+  const useStatus = Boolean(statusHasCoords && statusAt && (!trackAt || Date.parse(statusAt) >= Date.parse(trackAt)))
+  const latest = useStatus ? realtime.status : trackLatest
+
   const updatedAt = latest ? trackTimestamp(latest) : null
   const offlineMinutes = Math.max(1, numberEnv('NAVICOM_CMSV6_OFFLINE_MINUTES', 15))
-  const fresh = updatedAt ? Date.now() - Date.parse(updatedAt) <= offlineMinutes * 60_000 : false
+  const gpsFresh = updatedAt ? Date.now() - Date.parse(updatedAt) <= offlineMinutes * 60_000 : false
+  const online = realtime.online ?? gpsFresh
+  const transition = trackOnlineTransition(deviceId, online)
   const lat = latest ? firstCoordinate(latest, 'lat') : null
   const lng = latest ? firstCoordinate(latest, 'lng') : null
   const address = latest ? String(latest.ps || latest.pss || latest.position || latest.address || '').trim() || null : null
@@ -424,7 +488,9 @@ export async function cmsv6VehicleState(deviceId, options = {}) {
   return {
     device_id: deviceId,
     device_name: latest?.vid || latest?.dn || `Thiết bị ${deviceId}`,
-    online: fresh,
+    online,
+    online_source: realtime.online != null ? 'cmsv6-status' : 'gps',
+    online_since: transition.since,
     gps: {
       lat,
       lng,
@@ -439,7 +505,9 @@ export async function cmsv6VehicleState(deviceId, options = {}) {
       return {
         id: String(index + 1),
         label: channelLabel(index),
-        // GPS freshness không đồng nghĩa luồng video đang online. Player CMSV6 tự xác nhận trạng thái camera.
+        // Chỉ báo online/offline cho kênh khi CMSV6 xác nhận trạng thái thiết bị;
+        // nếu chỉ có GPS thì để player CMSV6 tự xác nhận (không chặn video).
+        ...(realtime.online != null ? { online: realtime.online } : {}),
         player_url: url,
         external_url: url,
         hls_url: null,
@@ -451,6 +519,7 @@ export async function cmsv6VehicleState(deviceId, options = {}) {
     message: latest ? null : `Đăng nhập CMSV6 thành công nhưng chưa tìm thấy điểm GPS của thiết bị ${deviceId} trong khoảng truy vấn.`,
     meta: {
       track_count: trackCount,
+      gps_source: useStatus ? 'realtime-status' : 'track-history',
       cms_result: rawResult,
       password_mode: session.passwordMode,
     },

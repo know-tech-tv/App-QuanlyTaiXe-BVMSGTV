@@ -1,3 +1,4 @@
+import { BRAND_LOGO_SMALL } from '../lib/brand'
 interface BrandLogoProps {
   className?: string
   compact?: boolean
@@ -9,7 +10,7 @@ export function BrandLogo({ className = '', compact = false }: BrandLogoProps) {
       <span className="brand-logo-disc">
         <img
           className="brand-logo-image"
-          src="/logo-bvmsgtv-v201.png"
+          src={BRAND_LOGO_SMALL}
           alt="Logo Bệnh viện Mắt Sài Gòn Trà Vinh"
         />
       </span>

@@ -39,6 +39,10 @@ export interface NavicomAccountVehiclesResponse {
 export interface NavicomVehicleState {
   device_id: string
   online: boolean
+  /** 'cmsv6-status': CMSV6 xác nhận online/offline thật; 'gps': chỉ suy ra từ độ mới GPS. */
+  online_source?: 'cmsv6-status' | 'gps' | null
+  /** Thời điểm thiết bị chuyển sang trạng thái online hiện tại (gateway theo dõi). */
+  online_since?: string | null
   device_name?: string | null
   gps: NavicomGpsState
   channels: NavicomCameraChannel[]

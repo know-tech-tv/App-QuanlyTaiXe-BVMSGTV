@@ -5,7 +5,7 @@
 /* Ô nhập ngày DD/MM/YYYY */
 .vietnam-date-control { width: 100%; min-width: 0; display: grid; gap: 5px; }
 .vietnam-date-input-row { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) 42px; width: 100%; min-width: 0; border: 1px solid var(--border-strong); border-radius: var(--r-sm); background: var(--surface); overflow: hidden; transition: border-color .15s, box-shadow .15s; }
-.vietnam-date-input-row:hover { border-color: #b3c1be; }
+.vietnam-date-input-row:hover { border-color: #b7c0da; }
 .vietnam-date-input-row:focus-within { border-color: var(--brand-400); box-shadow: var(--focus); }
 .vietnam-date-text-input { min-width: 0; min-height: 38px; border: 0 !important; border-radius: 0 !important; box-shadow: none !important; font-family: var(--font-mono); font-size: 13px; font-variant-numeric: tabular-nums; }
 .vietnam-native-picker-button { position: relative; display: grid; place-items: center; border-left: 1px solid var(--border); background: var(--surface-2); color: var(--muted); overflow: hidden; }

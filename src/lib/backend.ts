@@ -53,6 +53,7 @@ export interface BackendApi {
   createAdhocTrip(input: CreateAdhocTripInput, driverId: string): Promise<Trip>
   reviewAdhocTrip(id: string, status: Exclude<AdhocReportStatus, 'pending_review'>, note?: string): Promise<Trip>
   updateTrip(id: string, changes: Partial<Trip>): Promise<Trip>
+  chainTrip(fromTripId: string, toTripId: string): Promise<Trip>
   updateTripLocation(id: string, lat: number, lng: number): Promise<Trip>
   deleteTrip(id: string): Promise<void>
   createChecklist(input: Omit<Checklist, 'id' | 'created_at'>): Promise<Checklist>
@@ -717,6 +718,18 @@ const supabaseBackend: BackendApi = {
       if (error) throw new Error(friendlyTripError(error, 'Không thể cập nhật chuyến đi.'))
       return data as Trip
     }, optimistic)
+  },
+  async chainTrip(fromTripId, toTripId) {
+    if (!navigator.onLine) throw new Error('Cần kết nối mạng để nối chuyến (hệ thống phải kiểm tra KM và lịch xe).')
+    const client = await requireSupabase()
+    const { data, error } = await client.rpc('chain_trip', { p_from_trip: fromTripId, p_to_trip: toTripId })
+    if (error) {
+      if (/function .*chain_trip|could not find the function/i.test(error.message ?? '')) {
+        throw new Error('Máy chủ chưa hỗ trợ nối chuyến. Quản trị cần chạy supabase/migrate-v3.0.0-trip-chaining.sql.')
+      }
+      throw new Error(friendlyTripError(error, 'Không thể nối chuyến.'))
+    }
+    return data as Trip
   },
   async updateTripLocation(id, lat, lng) {
     const client = await requireSupabase()
