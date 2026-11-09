@@ -1,4 +1,4 @@
-const CACHE = 'dieu-phoi-xe-bvmsgtv-shell-v211142-camera-auto'
+const CACHE = 'dieu-phoi-xe-bvmsgtv-shell-v3.0.0'
 
 self.addEventListener('install', (event) => {
   const scope = self.registration.scope
@@ -8,7 +8,7 @@ self.addEventListener('install', (event) => {
     `${scope}manifest.webmanifest`,
     `${scope}icons/icon-192.png`,
     `${scope}icons/icon-512.png`,
-    `${scope}logo-bvmsgtv-v201.png`,
+    `${scope}brand/logo-bvmsgtv-2026-256.png`,
   ]
   event.waitUntil(
     caches.open(CACHE)

@@ -163,6 +163,8 @@ export interface Trip {
   current_lat?: number | null
   current_lng?: number | null
   location_updated_at?: string | null
+  /** v3.0.0: chuyến được nối tiếp từ chuyến này (dùng KM cuối làm KM đầu). */
+  chained_from_trip_id?: string | null
   created_by?: string | null
   created_at: string
   updated_at: string

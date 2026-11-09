@@ -1,0 +1,145 @@
+/* =====================================================================
+   BVMSGTV — Giao diện 2026
+   Lớp theme nạp cuối cùng: định hình lại khung ứng dụng, bề mặt, nút,
+   ứng dụng tài xế theo bộ nhận diện logo mới (navy · xanh da trời · đỏ).
+   ===================================================================== */
+
+body { background: var(--bg); }
+::selection { background: rgba(63, 189, 237, .25); }
+
+/* ---------- Sidebar navy ---------- */
+.sidebar {
+  background-image:
+    radial-gradient(120% 40% at 0% 0%, rgba(63, 189, 237, .18), transparent 60%),
+    linear-gradient(185deg, var(--ink-800) 0%, var(--ink-900) 38%, var(--ink-950) 100%);
+  border-right: 0;
+  box-shadow: 1px 0 0 rgba(255, 255, 255, .03), 8px 0 30px rgba(13, 16, 69, .12);
+}
+.sidebar-brand { margin: 16px 12px 10px; padding: 10px; border-radius: var(--r-lg); background: rgba(255, 255, 255, .05); border: 1px solid rgba(255, 255, 255, .07); }
+.sidebar-brand:hover { background: rgba(255, 255, 255, .08); }
+.sidebar-brand-logo { width: 42px; height: 42px; flex-basis: 42px; border-radius: 50%; box-shadow: 0 0 0 3px rgba(63, 189, 237, .25); }
+.sidebar-brand-logo img { width: 40px; height: 40px; }
+.sidebar-brand-copy strong { font-size: 15.5px; font-weight: 800; }
+.side-nav-label { color: #7d84bd; letter-spacing: .12em; }
+.side-nav button { min-height: 40px; border-radius: 11px; font-weight: 500; }
+.side-nav button:hover { background: rgba(255, 255, 255, .07); }
+.side-nav button.active { background: linear-gradient(90deg, rgba(63, 189, 237, .22), rgba(63, 189, 237, .06)); color: #fff; box-shadow: inset 0 0 0 1px rgba(63, 189, 237, .22); }
+.side-nav button.active::before { left: -12px; width: 4px; background: var(--logo-sky); box-shadow: 0 0 12px rgba(63, 189, 237, .7); }
+.side-nav button.active .side-nav-icon { color: var(--logo-sky); }
+.side-nav-badge, .side-nav-dot { background: var(--logo-red); }
+.sidebar-avatar { background: linear-gradient(135deg, var(--logo-sky), var(--brand-500)); }
+.sidebar-icon-button.logout:hover { background: rgba(227, 20, 27, .18); border-color: rgba(227, 20, 27, .35); color: #ff9a9d; }
+
+/* ---------- Topbar ---------- */
+.topbar { background: rgba(255, 255, 255, .86); border-bottom: 1px solid rgba(226, 230, 241, .9); }
+.topbar-heading h1 { font-weight: 800; letter-spacing: -.02em; color: var(--text); }
+.page-breadcrumb span:first-child { color: var(--brand-500); font-weight: 600; }
+.topbar-icon-button { border-radius: 12px; }
+.topbar-icon-button:hover { border-color: var(--brand-100); color: var(--brand-600); }
+.global-search-trigger { border-radius: 12px; background: var(--surface-2); }
+.global-search-trigger:hover { border-color: var(--brand-100); }
+.topbar-avatar { background: linear-gradient(135deg, var(--logo-sky), var(--brand-500)); }
+
+/* ---------- Bề mặt & thành phần ---------- */
+.panel { border-radius: var(--r-lg); box-shadow: var(--sh-1), 0 10px 30px -18px rgba(21, 25, 90, .18); }
+.panel-header { padding: 16px 20px; }
+.panel-header h2 { font-weight: 750; letter-spacing: -.01em; }
+.primary-button { background: linear-gradient(135deg, var(--logo-navy), var(--brand-500)); border: 0; box-shadow: 0 6px 16px -6px rgba(43, 47, 126, .55); }
+.primary-button:hover:not(:disabled) { background: linear-gradient(135deg, var(--ink-800), var(--logo-navy)); }
+.secondary-button:hover:not(:disabled) { border-color: var(--brand-100); color: var(--brand-600); }
+.filter-tabs { border-radius: 12px; }
+.filter-tabs button { border-radius: 9px; }
+.filter-tabs button.active { background: var(--logo-navy); box-shadow: 0 4px 10px -4px rgba(43, 47, 126, .6); }
+.count-pill { background: var(--brand-50); color: var(--brand-600); }
+.role-badge { background: var(--brand-50); color: var(--logo-navy); }
+tbody tr:hover td { background: #f6f9ff; }
+.modal-backdrop { background: rgba(13, 16, 69, .5); }
+.modal-card { border-radius: 22px; }
+.modal-header { background: linear-gradient(180deg, var(--surface-2), var(--surface)); }
+.modal-header h2 { font-weight: 800; letter-spacing: -.01em; }
+.spinner, .spinner-small, .login-spinner { border-color: var(--brand-100); border-top-color: var(--logo-navy); }
+.loading-state { background: radial-gradient(60% 40% at 50% 30%, var(--brand-50), transparent 70%), var(--bg); }
+.mobile-nav button.active { color: var(--logo-navy); }
+.mobile-nav-badge { background: var(--logo-red); }
+
+/* ---------- Ứng dụng tài xế ---------- */
+.driver-app { background: linear-gradient(180deg, var(--ink-900) 0 150px, var(--bg) 150px); }
+.driver-header { box-shadow: none; background-image: radial-gradient(100% 160% at 100% 0%, rgba(63, 189, 237, .28), transparent 55%); }
+.driver-header-logo { width: 42px; height: 42px; flex-basis: 42px; border-radius: 50%; box-shadow: 0 0 0 3px rgba(63, 189, 237, .3); }
+.driver-header-logo img { width: 40px; height: 40px; }
+.driver-header-greeting strong { font-size: 17px; font-weight: 800; }
+.driver-account-button { background: linear-gradient(135deg, var(--logo-sky), var(--brand-500)); }
+.driver-content { padding-top: 6px; }
+.driver-trip-progress { border-radius: 18px; box-shadow: var(--sh-2); border: 0; }
+.driver-trip-progress > div.current span { background: var(--logo-navy); box-shadow: 0 0 0 4px var(--brand-100); }
+.driver-trip-card { border: 0; border-radius: 22px; box-shadow: var(--sh-2); position: relative; overflow: hidden; }
+.driver-trip-card::before { content: ''; position: absolute; inset: 0 0 auto 0; height: 4px; background: linear-gradient(90deg, var(--logo-navy), var(--logo-sky) 70%, var(--logo-red)); }
+.driver-vehicle-line > span { background: linear-gradient(135deg, var(--logo-navy), var(--brand-500)); border-radius: 13px; }
+.driver-route-card { border-radius: 16px; }
+.route-dot { border-color: var(--logo-sky); }
+.route-dot.end { border-color: var(--logo-red); background: var(--logo-red); }
+.driver-driving-focus { border-radius: 22px; background-image: radial-gradient(100% 120% at 100% 0%, rgba(63, 189, 237, .3), transparent 60%); }
+.driver-driving-focus button { background: var(--logo-red); }
+.driver-section-label { color: var(--logo-sky); }
+.driver-primary-journey { border-radius: 20px; background: linear-gradient(135deg, var(--logo-navy), var(--brand-500)); box-shadow: 0 14px 30px -10px rgba(43, 47, 126, .6); }
+.driver-primary-journey:disabled { background: #aab1cf; }
+.driver-quick-action { border-radius: 18px; border: 0; box-shadow: var(--sh-2); }
+.driver-bottom-nav button.active, .driver-bottom-nav a.active { color: var(--logo-navy); }
+
+/* ---------- Nối chuyến ---------- */
+.trip-chain-card {
+  position: relative; display: grid; gap: 12px; padding: 16px;
+  border-radius: 22px; color: #fff; overflow: hidden;
+  background: radial-gradient(120% 120% at 100% 0%, rgba(63, 189, 237, .35), transparent 55%), linear-gradient(140deg, var(--ink-800), var(--ink-950));
+  box-shadow: 0 18px 40px -16px rgba(13, 16, 69, .6);
+}
+.trip-chain-head { display: flex; align-items: center; gap: 12px; }
+.trip-chain-head > span { width: 42px; height: 42px; flex: 0 0 42px; display: grid; place-items: center; border-radius: 13px; background: rgba(63, 189, 237, .2); color: var(--logo-sky); }
+.trip-chain-head div { display: grid; gap: 2px; min-width: 0; }
+.trip-chain-head strong { font-size: 16px; font-weight: 800; }
+.trip-chain-head small { font-size: 12px; color: #c3c7ea; line-height: 1.45; }
+.trip-chain-link { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 8px; padding: 10px 12px; border-radius: 14px; background: rgba(255, 255, 255, .07); border: 1px solid rgba(255, 255, 255, .1); }
+.trip-chain-link > div { display: grid; gap: 2px; min-width: 0; }
+.trip-chain-link > div:last-child { text-align: right; }
+.trip-chain-link small { font-size: 10.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-muted); font-weight: 700; }
+.trip-chain-link strong { font-size: 13px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.trip-chain-link b { font-family: var(--font-mono); font-size: 12px; color: var(--logo-sky); font-weight: 600; }
+.trip-chain-link > i { width: 34px; height: 34px; display: grid; place-items: center; border-radius: 50%; background: var(--logo-sky); color: var(--ink-950); font-style: normal; }
+.trip-chain-options { display: grid; gap: 8px; }
+.trip-chain-option { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 10px; width: 100%; padding: 11px 12px; border: 1px solid rgba(255, 255, 255, .12); border-radius: 14px; background: rgba(255, 255, 255, .05); color: #fff; text-align: left; }
+.trip-chain-option:hover:not(:disabled) { background: rgba(255, 255, 255, .1); border-color: rgba(63, 189, 237, .45); }
+.trip-chain-option > div { display: grid; gap: 2px; min-width: 0; }
+.trip-chain-option strong { font-size: 14px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.trip-chain-option small { font-size: 11.5px; color: #c3c7ea; }
+.trip-chain-option > span { display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 12px; border-radius: 10px; background: var(--logo-sky); color: var(--ink-950); font-size: 13px; font-weight: 800; white-space: nowrap; }
+.trip-chain-option.adhoc > span { background: #fff; }
+.trip-chain-foot { display: flex; justify-content: space-between; align-items: center; gap: 10px; font-size: 11.5px; color: var(--ink-muted); }
+.trip-chain-foot button { border: 0; background: transparent; color: #c3c7ea; font-size: 12px; font-weight: 600; text-decoration: underline; text-underline-offset: 2px; padding: 4px 0; }
+.trip-chain-badge { display: inline-flex; align-items: center; gap: 5px; height: 22px; padding: 0 9px; border-radius: 999px; background: var(--brand-50); color: var(--logo-navy); font-size: 11px; font-weight: 700; }
+.trip-chain-badge .ui-icon { color: var(--brand-400); }
+
+/* ---------- Camera Navicom: trạng thái kết nối lại ---------- */
+.camera-reconnect-note { display: flex; align-items: center; gap: 8px; margin: 8px 0 0; padding: 8px 11px; border-radius: 10px; background: var(--brand-50); border: 1px solid var(--brand-100); color: var(--brand-600); font-size: 12px; font-weight: 600; }
+.camera-reconnect-note .ui-icon { color: var(--brand-400); }
+.camera-reload-button { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--border-strong); border-radius: 9px; background: var(--surface); color: var(--text-2); height: 30px; padding: 0 10px; font-size: 12px; font-weight: 600; }
+.camera-reload-button:hover { border-color: var(--brand-100); color: var(--brand-600); }
+.camera-wake-state { display: grid; justify-items: center; gap: 8px; padding: 26px 14px; text-align: center; color: var(--muted); }
+.camera-wake-state .spinner-small { width: 22px; height: 22px; }
+.camera-wake-state strong { color: var(--text); font-size: 14px; }
+.camera-wake-state span { font-size: 12.5px; max-width: 40ch; line-height: 1.5; }
+.fleet-camera-card { border-radius: 16px; background: var(--ink-950); }
+.fleet-camera-card header strong { font-size: 12.5px; }
+.fleet-camera-card header a { font-size: 11px; color: var(--brand-500); }
+.fleet-camera-dot.online { background: #12b76a; box-shadow: 0 0 0 3px rgba(18, 183, 106, .2); }
+.fleet-camera-dot.offline { background: var(--logo-red); }
+.fleet-camera-frame { background: var(--ink-950); }
+.fleet-camera-frame.is-unverified { background: radial-gradient(80% 90% at 50% 0%, rgba(63, 189, 237, .14), transparent 70%), var(--ink-950); }
+.fleet-camera-unavailable { color: #d9dcf5; gap: 7px; }
+.fleet-camera-unavailable strong { font-size: 14px; color: #fff; }
+.fleet-camera-unavailable span { font-size: 12px; color: #a9aed6; max-width: 320px; line-height: 1.5; }
+.fleet-camera-frame .camera-wake-state { position: absolute; inset: 0; align-content: center; color: #a9aed6; }
+.fleet-camera-frame .camera-wake-state strong { color: #fff; }
+.fleet-camera-frame .camera-wake-state .spinner-small { border-color: rgba(255, 255, 255, .2); border-top-color: var(--logo-sky); }
+.camera-retry-button { margin-top: 6px; border: 0; border-radius: 10px; min-height: 38px; padding: 0 16px; background: var(--logo-sky); color: var(--ink-950); font-size: 13px; font-weight: 800; cursor: pointer; }
+.camera-retry-button:hover { filter: brightness(1.06); }
+.navicom-camera-pane.fleet-camera-card { min-width: 0; }

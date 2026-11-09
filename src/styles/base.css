@@ -4,41 +4,49 @@
    ===================================================================== */
 
 :root {
-  /* Nền tối cho sidebar / header ứng dụng tài xế */
-  --ink-950: #081816;
-  --ink-900: #0c211e;
-  --ink-800: #133029;
-  --ink-700: #1c3f38;
-  --ink-text: #cfdcd9;
-  --ink-muted: #83a09a;
+  /* =========== Giao diện 2026 — màu lấy từ logo mới BVMSGTV ===========
+     Navy (vòng ngoài, chữ thập) · Xanh da trời (nền logo) · Đỏ (chữ thập, chấm định vị) */
+  --logo-navy: #2b2f7e;
+  --logo-sky: #3fbded;
+  --logo-red: #e3141b;
 
-  /* Thương hiệu: xanh ngọc bệnh viện */
-  --brand-700: #084a43;
-  --brand-600: #0b5e55;
-  --brand-500: #107262;
-  --brand-400: #1f9a84;
-  --brand-300: #5cc4ae;
-  --brand-100: #d5ede7;
-  --brand-50: #edf7f4;
+  /* Nền tối cho sidebar / header ứng dụng tài xế — navy */
+  --ink-950: #0d1045;
+  --ink-900: #15195a;
+  --ink-800: #1e236e;
+  --ink-700: #2b2f7e;
+  --ink-text: #d9dcf5;
+  --ink-muted: #9298c9;
 
-  /* Trung tính (hơi ngả xanh ngọc) */
-  --bg: #f2f5f4;
+  /* Thương hiệu: navy → xanh da trời */
+  --brand-700: #1e236e;
+  --brand-600: #2b2f7e;
+  --brand-500: #2f5fc4;
+  --brand-400: #2a9fdc;
+  --brand-300: #6fd0f5;
+  --brand-100: #d8effb;
+  --brand-50: #eef7fd;
+  --accent: #e3141b;
+  --accent-bg: #fdecec;
+
+  /* Trung tính (hơi ngả xanh lam) */
+  --bg: #f3f5fb;
   --surface: #ffffff;
-  --surface-2: #f7f9f8;
-  --surface-3: #eef2f1;
-  --border: #e1e7e5;
-  --border-strong: #cad5d2;
-  --text: #0e1c1a;
-  --text-2: #3e4f4b;
-  --muted: #687a76;
-  --faint: #9aa8a5;
+  --surface-2: #f7f8fc;
+  --surface-3: #edf0f8;
+  --border: #e2e6f1;
+  --border-strong: #cbd2e4;
+  --text: #11153a;
+  --text-2: #3d4366;
+  --muted: #6a7092;
+  --faint: #9da3c0;
 
   /* Ngữ nghĩa */
-  --success: #0c8158; --success-bg: #e6f4ec; --success-line: #b9e0cb;
-  --warning: #a8590a; --warning-bg: #fdf1df; --warning-line: #f1d2a2;
-  --danger: #bf3328;  --danger-bg: #fcebe8;  --danger-line: #f3c2bc;
-  --info: #2556bd;    --info-bg: #eaf0fc;    --info-line: #c4d4f5;
-  --amber: #c9860f;   --amber-bg: #fff6e5;   --amber-line: #f2d9a6;
+  --success: #0b8a5c; --success-bg: #e5f6ee; --success-line: #b5e3cd;
+  --warning: #a65a06; --warning-bg: #fdf2e1; --warning-line: #f2d3a3;
+  --danger: #c8141b;  --danger-bg: #fdecec;  --danger-line: #f6c3c5;
+  --info: #2f5fc4;    --info-bg: #ebf1fd;    --info-line: #c6d6f6;
+  --amber: #d08a0c;   --amber-bg: #fff6e4;   --amber-line: #f3d9a3;
 
   /* Chữ */
   --font: "Be Vietnam Pro", "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, "SF Pro Text", Roboto, "Helvetica Neue", Arial, sans-serif;
@@ -46,11 +54,11 @@
   --fs-xs: 11px; --fs-sm: 12.5px; --fs-base: 14px; --fs-md: 15px; --fs-lg: 17px; --fs-xl: 20px; --fs-2xl: 24px; --fs-3xl: 30px;
 
   /* Hình khối */
-  --r-xs: 6px; --r-sm: 8px; --r: 10px; --r-lg: 14px; --r-xl: 18px;
-  --sh-1: 0 1px 2px rgba(12, 33, 30, .05);
-  --sh-2: 0 1px 2px rgba(12, 33, 30, .04), 0 4px 14px rgba(12, 33, 30, .06);
-  --sh-pop: 0 20px 50px rgba(8, 24, 22, .22), 0 2px 6px rgba(8, 24, 22, .08);
-  --focus: 0 0 0 3px rgba(31, 154, 132, .28);
+  --r-xs: 7px; --r-sm: 10px; --r: 12px; --r-lg: 16px; --r-xl: 22px;
+  --sh-1: 0 1px 2px rgba(21, 25, 90, .05);
+  --sh-2: 0 1px 2px rgba(21, 25, 90, .04), 0 8px 24px rgba(21, 25, 90, .07);
+  --sh-pop: 0 24px 60px rgba(13, 16, 69, .24), 0 2px 6px rgba(13, 16, 69, .08);
+  --focus: 0 0 0 3px rgba(42, 159, 220, .32);
 
   --sidebar-w: 248px;
   --sidebar-w-collapsed: 72px;
@@ -101,7 +109,7 @@ input, select, textarea {
   transition: border-color .15s, box-shadow .15s;
 }
 input::placeholder, textarea::placeholder { color: var(--faint); }
-input:hover, select:hover, textarea:hover { border-color: #b3c1be; }
+input:hover, select:hover, textarea:hover { border-color: #b7c0da; }
 input:focus, select:focus, textarea:focus { border-color: var(--brand-400); box-shadow: var(--focus); }
 input:disabled, select:disabled, textarea:disabled { background: var(--surface-3); color: var(--muted); }
 textarea { min-height: 88px; resize: vertical; line-height: 1.5; }
@@ -140,7 +148,7 @@ legend { padding: 0 6px; font-size: var(--fs-sm); font-weight: 700; color: var(-
 .primary-button { background: var(--brand-600); color: #fff; box-shadow: 0 1px 0 rgba(255,255,255,.12) inset, var(--sh-1); }
 .primary-button:hover:not(:disabled) { background: var(--brand-700); text-decoration: none; }
 .secondary-button { background: var(--surface); color: var(--text); border-color: var(--border-strong); box-shadow: var(--sh-1); }
-.secondary-button:hover:not(:disabled) { background: var(--surface-2); border-color: #b3c1be; text-decoration: none; }
+.secondary-button:hover:not(:disabled) { background: var(--surface-2); border-color: #b7c0da; text-decoration: none; }
 .approve-button { background: var(--success-bg); color: var(--success); border-color: var(--success-line); }
 .approve-button:hover:not(:disabled) { background: #d6ede1; }
 .reject-button { background: var(--surface); color: var(--danger); border-color: var(--danger-line); }
@@ -197,7 +205,7 @@ table { width: 100%; border-collapse: collapse; font-size: var(--fs-sm); }
 thead th { position: sticky; top: 0; z-index: 1; padding: 10px 14px; background: var(--surface-2); border-bottom: 1px solid var(--border); text-align: left; font-size: var(--fs-xs); font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); white-space: nowrap; }
 tbody td { padding: 11px 14px; border-bottom: 1px solid var(--border); vertical-align: middle; color: var(--text-2); }
 tbody tr:last-child td { border-bottom: 0; }
-tbody tr:hover td { background: #fafcfb; }
+tbody tr:hover td { background: #f8f9fd; }
 td strong { display: block; color: var(--text); font-weight: 600; }
 td small { display: block; color: var(--muted); font-size: var(--fs-xs); margin-top: 2px; }
 .clickable-table-row { cursor: pointer; }
@@ -268,7 +276,7 @@ td small { display: block; color: var(--muted); font-size: var(--fs-xs); margin-
 .data-error-banner { margin: 12px var(--gutter) 0; padding: 10px 14px; border-radius: var(--r); background: var(--danger-bg); border: 1px solid var(--danger-line); color: var(--danger); font-size: var(--fs-sm); }
 
 /* ---------- Modal ---------- */
-.modal-backdrop { position: fixed; inset: 0; z-index: 1000; display: grid; place-items: center; padding: 24px; background: rgba(8, 24, 22, .55); backdrop-filter: blur(3px); animation: fade-in .15s ease-out; }
+.modal-backdrop { position: fixed; inset: 0; z-index: 1000; display: grid; place-items: center; padding: 24px; background: rgba(13, 16, 69, .55); backdrop-filter: blur(3px); animation: fade-in .15s ease-out; }
 .modal-card { width: min(560px, 100%); max-height: calc(100vh - 48px); display: flex; flex-direction: column; background: var(--surface); border-radius: var(--r-xl); box-shadow: var(--sh-pop); overflow: hidden; animation: pop-in .18s ease-out; }
 .modal-card.modal-wide { width: min(920px, 100%); }
 .modal-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 20px; border-bottom: 1px solid var(--border); }

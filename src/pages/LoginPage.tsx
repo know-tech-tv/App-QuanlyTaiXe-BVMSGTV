@@ -1,8 +1,15 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { Icon } from '../components/Icon'
+import { BRAND_LOGO, BRAND_NAME, HOSPITAL_NAME } from '../lib/brand'
 
 const REMEMBER_PHONE_KEY = 'bvmsgtv_login_phone'
+
+const FEATURES: Array<{ icon: Parameters<typeof Icon>[0]['name']; title: string; detail: string }> = [
+  { icon: 'route', title: 'Điều phối & nối chuyến', detail: 'Giao chuyến, nhận chuyến và nối chuyến liên tục không cần quay về bệnh viện.' },
+  { icon: 'navigation', title: 'GPS & camera Navicom', detail: 'Vị trí realtime và 2 camera mỗi xe, tự kết nối lại khi xe nổ máy.' },
+  { icon: 'shield', title: 'Phân quyền nội bộ', detail: 'Hành chính, Điều phối, Kế toán, BGĐ và Tài xế — mỗi vai trò một màn hình.' },
+]
 
 export function LoginPage() {
   const { login } = useAuth()
@@ -14,20 +21,20 @@ export function LoginPage() {
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
-    const savedPhone = window.localStorage.getItem(REMEMBER_PHONE_KEY)
-    if (savedPhone) {
-      setPhone(savedPhone)
-      setRememberMe(true)
-    }
+    try {
+      const savedPhone = window.localStorage.getItem(REMEMBER_PHONE_KEY)
+      if (savedPhone) setPhone(savedPhone)
+    } catch { /* trình duyệt chặn bộ nhớ cục bộ */ }
   }, [])
 
   async function submit(event: React.FormEvent) {
     event.preventDefault()
     setLoading(true)
     setError(null)
-
-    if (rememberMe) window.localStorage.setItem(REMEMBER_PHONE_KEY, phone)
-    else window.localStorage.removeItem(REMEMBER_PHONE_KEY)
+    try {
+      if (rememberMe) window.localStorage.setItem(REMEMBER_PHONE_KEY, phone)
+      else window.localStorage.removeItem(REMEMBER_PHONE_KEY)
+    } catch { /* bỏ qua */ }
 
     try {
       await login(phone, password)
@@ -38,153 +45,79 @@ export function LoginPage() {
     }
   }
 
-  function handleForgotPassword() {
-    setError('Vui lòng liên hệ Điều phối hoặc Quản trị viên để được cấp lại mật khẩu.')
-  }
-
   return (
-    <main className="login-page login-cinematic">
-      <div className="login-curtain login-curtain-left" aria-hidden="true" />
-      <div className="login-curtain login-curtain-right" aria-hidden="true" />
+    <main className="auth-page">
+      <section className="auth-brand" aria-label={`${BRAND_NAME} — ${HOSPITAL_NAME}`}>
+        <div className="auth-brand-glow" aria-hidden="true" />
+        <div className="auth-brand-rings" aria-hidden="true"><i /><i /><i /></div>
 
-      <section className="login-showcase" aria-label="Trung tâm điều hành đội xe Bệnh viện Mắt Sài Gòn Trà Vinh">
-        <div className="login-hospital-backdrop" aria-hidden="true" />
-        <div className="login-grid-light" aria-hidden="true" />
-        <div className="login-aurora login-aurora-a" aria-hidden="true" />
-        <div className="login-aurora login-aurora-b" aria-hidden="true" />
-
-        <header className="login-brand-lockup">
-          <span className="login-brand-logo"><img src="/logo-bvmsgtv-v201.png" alt="" /></span>
-          <div>
-            <strong>Điều phối xe</strong>
-            <small>Bệnh viện Mắt Sài Gòn Trà Vinh</small>
-          </div>
+        <header className="auth-brand-head">
+          <span className="auth-brand-mark"><img src={BRAND_LOGO} alt="" /></span>
+          <div><strong>{BRAND_NAME}</strong><small>{HOSPITAL_NAME}</small></div>
         </header>
 
-        <div className="login-showcase-copy">
-          <span className="login-live-pill"><i /> Trung tâm điều hành đang trực tuyến</span>
-          <h1>Điều hành đội xe<br /><em>như một trung tâm chỉ huy.</em></h1>
-          <p>Phân công chuyến, GPS Navicom, camera, chi phí và bảo dưỡng — tập trung trong một giao diện duy nhất.</p>
-
-          <div className="login-command-chips">
-            <span><Icon name="navigation" size={15} /> GPS realtime</span>
-            <span><Icon name="camera" size={15} /> 2 camera / xe</span>
-            <span><Icon name="shield" size={15} /> Phân quyền nội bộ</span>
-          </div>
+        <div className="auth-brand-hero">
+          <div className="auth-emblem"><img src={BRAND_LOGO} alt={`Logo ${HOSPITAL_NAME}`} /></div>
+          <span className="auth-kicker"><i /> Trung tâm điều hành đội xe</span>
+          <h1>An toàn trên mỗi<br /><em>hành trình chăm sóc mắt.</em></h1>
+          <p>Một nền tảng cho toàn bộ quy trình đội xe bệnh viện — từ đề nghị điều xe, phê duyệt, phân công tài xế đến giám sát GPS, camera và chi phí.</p>
         </div>
 
-        <div className="login-fleet-stage login-fleet-stage-three" aria-label="Đội xe phục vụ Bệnh viện Mắt Sài Gòn Trà Vinh">
-          <div className="login-road-orbit" aria-hidden="true"><span /><span /><span /></div>
+        <ul className="auth-features">
+          {FEATURES.map((item) => <li key={item.title}>
+            <span><Icon name={item.icon} size={18} /></span>
+            <div><strong>{item.title}</strong><small>{item.detail}</small></div>
+          </li>)}
+        </ul>
 
-          <article className="login-vehicle-card login-vehicle-van-left">
-            <span className="login-vehicle-status"><i /> Xe 16 chỗ 01</span>
-            <img src="/hiace-user-v201.png" alt="Xe Toyota Hiace 16 chỗ phục vụ bệnh viện" />
-            <div className="login-vehicle-hospital-badge"><img src="/logo-bvmsgtv-v201.png" alt="" /><span>BVMSGTV</span></div>
-          </article>
-
-          <article className="login-vehicle-card login-vehicle-suv-center">
-            <span className="login-vehicle-status"><i /> Xe điều phối 7 chỗ</span>
-            <img src="/fortuner-user-v201.png" alt="Xe Toyota Fortuner 7 chỗ phục vụ điều phối bệnh viện" />
-            <div className="login-vehicle-hospital-badge"><img src="/logo-bvmsgtv-v201.png" alt="" /><span>BVMSGTV</span></div>
-          </article>
-
-          <article className="login-vehicle-card login-vehicle-van-right">
-            <span className="login-vehicle-status"><i /> Xe 16 chỗ 02</span>
-            <img src="/hiace-user-v201.png" alt="Xe Toyota Hiace 16 chỗ thứ hai phục vụ bệnh viện" />
-            <div className="login-vehicle-hospital-badge"><img src="/logo-bvmsgtv-v201.png" alt="" /><span>BVMSGTV</span></div>
-          </article>
-        </div>
-
-        <footer className="login-showcase-footer">
-          <span>© {new Date().getFullYear()} Bệnh viện Mắt Sài Gòn Trà Vinh</span>
-          <span>Hệ thống nội bộ · Phòng Hành chính</span>
-        </footer>
+        <footer className="auth-brand-foot">© {new Date().getFullYear()} {HOSPITAL_NAME} · Hệ thống nội bộ</footer>
       </section>
 
-      <section className="login-panel" aria-label="Đăng nhập hệ thống điều phối xe">
-        <div className="login-panel-glow" aria-hidden="true" />
-        <div className="login-eye-orbit" aria-hidden="true"><i /><i /><i /></div>
-
-        <div className="login-card">
-          <div className="login-mobile-vehicle login-mobile-fleet-three" aria-hidden="true">
-            <div className="login-mobile-vehicle-backdrop" />
-            <div className="login-mobile-fleet-row">
-              <div className="login-mobile-fleet-item"><img src="/hiace-user-v201.png" alt="" /><span>16 chỗ</span></div>
-              <div className="login-mobile-fleet-item login-mobile-fleet-suv"><img src="/fortuner-user-v201.png" alt="" /><span>7 chỗ</span></div>
-              <div className="login-mobile-fleet-item"><img src="/hiace-user-v201.png" alt="" /><span>16 chỗ</span></div>
-            </div>
-            <strong>Đội xe BVMSGTV</strong>
+      <section className="auth-panel" aria-label="Đăng nhập hệ thống điều phối xe">
+        <div className="auth-card">
+          <div className="auth-mobile-head">
+            <span className="auth-brand-mark large"><img src={BRAND_LOGO} alt="" /></span>
+            <div><strong>{BRAND_NAME}</strong><small>{HOSPITAL_NAME}</small></div>
           </div>
 
-          <div className="login-mobile-brand">
-            <span className="login-logo"><img src="/logo-bvmsgtv-v201.png" alt="" /></span>
-            <div><strong>Điều phối xe</strong><small>Bệnh viện Mắt Sài Gòn Trà Vinh</small></div>
-          </div>
-
-          <header className="login-heading">
-            <span className="login-heading-kicker"><Icon name="sparkles" size={14} /> Welcome back</span>
-            <h2>Chào mừng trở lại</h2>
-            <p>Đăng nhập để tiếp tục điều hành đội xe.</p>
+          <header className="auth-heading">
+            <h2>Đăng nhập</h2>
+            <p>Dùng số điện thoại đã được Hành chính cấp tài khoản.</p>
           </header>
 
-          <form onSubmit={submit} className="login-form">
-            <label className="login-field">
+          <form onSubmit={submit} className="auth-form">
+            <label className="auth-field">
               <span>Số điện thoại</span>
-              <div className="login-input">
+              <div className="auth-input">
                 <Icon name="phone" size={18} />
-                <input
-                  inputMode="tel"
-                  autoComplete="username"
-                  value={phone}
-                  onChange={(event) => setPhone(event.target.value)}
-                  placeholder="VD: 0901 234 567"
-                  required
-                />
+                <input inputMode="tel" autoComplete="username" value={phone} onChange={(event) => setPhone(event.target.value)} placeholder="VD: 0901 234 567" required />
               </div>
             </label>
 
-            <label className="login-field">
+            <label className="auth-field">
               <span>Mật khẩu</span>
-              <div className="login-input">
+              <div className="auth-input">
                 <Icon name="lock" size={18} />
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  autoComplete="current-password"
-                  value={password}
-                  onChange={(event) => setPassword(event.target.value)}
-                  placeholder="Nhập mật khẩu"
-                  required
-                />
-                <button type="button" onClick={() => setShowPassword((value) => !value)} aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}>
+                <input type={showPassword ? 'text' : 'password'} autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Nhập mật khẩu" required />
+                <button type="button" onClick={() => setShowPassword((value) => !value)} aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'} aria-pressed={showPassword}>
                   <Icon name="eye" size={18} />
                 </button>
               </div>
             </label>
 
-            <div className="login-options">
-              <label>
-                <input type="checkbox" checked={rememberMe} onChange={(event) => setRememberMe(event.target.checked)} />
-                <span>Ghi nhớ số điện thoại</span>
-              </label>
-              <button type="button" onClick={handleForgotPassword}>Quên mật khẩu?</button>
+            <div className="auth-options">
+              <label><input type="checkbox" checked={rememberMe} onChange={(event) => setRememberMe(event.target.checked)} /><span>Ghi nhớ số điện thoại</span></label>
+              <button type="button" onClick={() => setError('Vui lòng liên hệ Điều phối hoặc Quản trị viên để được cấp lại mật khẩu.')}>Quên mật khẩu?</button>
             </div>
 
             {error && <div className="form-error" role="alert"><Icon name="alert" size={16} /><span><strong>Không thể đăng nhập.</strong> {error}</span></div>}
 
-            <button type="submit" className="primary-button login-submit" disabled={loading}>
-              <span className="login-submit-shine" aria-hidden="true" />
-              {loading ? <><i className="login-spinner" />Đang xác thực...</> : <>Vào trung tâm điều hành<Icon name="arrow-right" size={18} /></>}
+            <button type="submit" className="auth-submit" disabled={loading}>
+              {loading ? <><i className="login-spinner" />Đang xác thực...</> : <>Đăng nhập<Icon name="arrow-right" size={18} /></>}
             </button>
           </form>
 
-          <aside className="login-security">
-            <Icon name="shield" size={19} />
-            <span>Phiên đăng nhập được bảo vệ và phân quyền theo từng vai trò trong bệnh viện.</span>
-          </aside>
-
-          <div className="login-system-note">
-            <i /> Hệ thống nội bộ BVMSGTV
-          </div>
+          <aside className="auth-secure"><Icon name="shield" size={17} /><span>Phiên đăng nhập được mã hóa và phân quyền theo vai trò.</span></aside>
         </div>
       </section>
     </main>

@@ -1,28 +1,41 @@
-# Vietmap Field Map Probe v4 – BVMSGTV
+# Điều phối xe – Bệnh viện Mắt Sài Gòn Trà Vinh
 
-## Mục đích
+Phiên bản **v2.10.1 Local Ready**, dựa trên giao diện doanh nghiệp v2.10.0.
 
-Bản v3 đã xác định: `VehicleListV2` có 36 cột; `RefreshVehicle.Data` có 89 cột. V4 chỉ xác định **vị trí tên trường kỹ thuật**, **cột tọa độ** và **cột chuỗi chứa cặp kinh/vĩ độ**, không ghi dữ liệu thật.
+## Flow nghiệp vụ hiện tại
 
-## Cài đặt Windows
+1. **Điều phối tạo chuyến → Hành chính điều phối duyệt → Tài xế nhận chuyến.** Ban Giám đốc không duyệt từng chuyến.
+2. **Trưởng khoa gửi đề nghị → Hành chính duyệt đề nghị → Điều phối tạo chuyến → Tài xế.** Không duyệt Hành chính lần hai.
+3. **Tài xế tạo chuyến đột xuất → đi ngay → Hành chính/Điều phối xác nhận báo cáo sau.**
+4. **Chi phí:** Tài xế gửi → Ban Giám đốc duyệt → Kế toán duyệt → Kế toán xác nhận chi trả.
+5. **Sự cố/Bảo dưỡng:** Tài xế hoặc bộ phận gửi → Ban Giám đốc duyệt → Hành chính tiếp nhận/xử lý.
+6. **GPS realtime:** Điều phối, Hành chính, Ban Giám đốc và Quản trị được xem; Kế toán không xem vị trí realtime.
+7. **BGĐ:** xem báo cáo tổng hợp cuối tháng, duyệt chi phí và xử lý phê duyệt sự cố/bảo dưỡng; không duyệt xe đi.
 
-1. Giải nén vào thư mục riêng. Không chép đè source Điều phối xe.
-2. Trong CMD tại thư mục chứa `package.json` chạy:
+## Chạy local
 
-```cmd
-npm.cmd install
-npm.cmd run self-test
-npm.cmd start
+Đọc `HUONG-DAN-CHAY-LOCAL-v2.10.1.md`. Cách nhanh nhất trên Windows:
+
+```text
+1. Chạy SETUP-LOCAL.cmd
+2. Điền .env.local
+3. Chạy lại SETUP-LOCAL.cmd
+4. Chạy START-LOCAL.cmd
+5. Mở http://localhost:5173
 ```
 
-3. Chrome mở: đăng nhập tài khoản Vietmap hợp lệ bằng tay, vào **Giám sát xe**, chọn xe, đợi 30–60 giây; sau đó quay lại CMD nhấn Enter.
-4. Chỉ gửi file `probe-output/vietmap-field-map-safe.json` vào chat.
+## Yêu cầu
 
-## Bảo mật và giới hạn
+- Node.js >= 22.12
+- npm
+- Supabase đã có schema/migration đến v2.9.0
+- Edge Function `manage-user` nếu Quản trị tạo/xóa/khóa tài khoản
+- Edge Function `analyze-odometer` nếu dùng Gemini OCR
 
-- Công cụ chạy trên Windows của bạn, sử dụng phiên Chrome tạm thời, không lưu mật khẩu/cookie/phiên đăng nhập vào file báo cáo.
-- Chỉ phân tích các endpoint đã quan sát được. Không tự gọi API từ ngoài luồng giao diện và không vượt CAPTCHA/đăng nhập.
-- Báo cáo không có giá trị tọa độ, biển số, tài xế hay phản hồi thô.
-- Không gửi thư mục trình duyệt, file HAR hoặc token.
-- Đây là khảo sát giao diện trong phạm vi tài khoản bạn có quyền truy cập. Kiểm tra điều khoản Vietmap trước khi dùng kỹ thuật này để đồng bộ tự động lâu dài.
-- Các trường được xác định chỉ là *ứng viên*. Trước khi đưa vào ứng dụng điều xe, phải đối chiếu với giao diện thật và thử nghiệm một xe.
+## Build production
+
+```cmd
+BUILD-LOCAL.cmd
+```
+
+Kết quả ở `dist/`.

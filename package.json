@@ -1,11 +1,41 @@
 {
-  "name": "bvmsgtv-vietmap-field-map-probe-v4",
-  "version": "4.0.0",
+  "name": "dieu-phoi-xe-bvmsgtv",
   "private": true,
+  "version": "3.0.0",
   "type": "module",
   "scripts": {
-    "start": "node probe.mjs",
-    "self-test": "node test.mjs"
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview --host 0.0.0.0",
+    "check": "tsc -b --pretty false",
+    "verify:source": "node scripts/verify-source.mjs",
+    "verify": "npm run verify:source && npm run check && npm run build",
+    "verify:package": "node scripts/verify-source.mjs --package",
+    "local:check": "node scripts/check-local-env.mjs",
+    "dev:local": "vite --host 127.0.0.1 --port 5173",
+    "dev:lan": "vite --host 0.0.0.0 --port 5173",
+    "dev:https": "vite --config vite.https.config.mjs --host 0.0.0.0 --port 5173",
+    "navicom:gateway": "node --env-file=.env.navicom.local server/navicom-gateway/server.mjs",
+    "dev:navicom": "node --env-file=.env.navicom.local server/navicom-gateway/server.mjs",
+    "navicom:check": "node scripts/check-navicom-env.mjs",
+    "navicom:health": "node scripts/check-navicom-health.mjs",
+    "navicom:cmsv6-test": "node --env-file=.env.navicom.local server/navicom-gateway/test-cmsv6.mjs"
   },
-  "dependencies": {"playwright": "^1.56.0"}
+  "dependencies": {
+    "@supabase/supabase-js": "^2.0.0",
+    "idb": "^8.0.3",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "tesseract.js": "^6.0.1"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.4",
+    "typescript": "^5.9.3",
+    "vite": "^8.1.5"
+  },
+  "engines": {
+    "node": ">=22.12.0"
+  }
 }

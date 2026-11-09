@@ -5,7 +5,8 @@ import { fetchNavicomVehicleState, type NavicomVehicleState } from '../lib/navic
 import { NAVICOM_FLEET_EVENT, classifyNavicomState, coordinateLabel, loadNavicomEvents, type FleetEvent, type FleetStatus } from '../lib/navicomFleet'
 import { formatDateTime } from '../lib/utils'
 import { consumeNavigationFocus, NAVIGATION_FOCUS_EVENT } from '../lib/focusNavigation'
-import { enterLandscapeFullscreen, exitLandscapeFullscreen, fullscreenElement } from '../lib/cameraFullscreen'
+import { NavicomCameraPane } from '../components/NavicomCameraPane'
+import { GATEWAY_FAILURES_BEFORE_ERROR, useCameraLifecycle } from '../lib/navicomCamera'
 import type { Trip, Vehicle } from '../types/models'
 
 const POLL_MS = 5_000
@@ -27,6 +28,7 @@ export function TrackingPage() {
   const previousStatesRef = useRef<VehicleStateMap>({})
   const [liveStatuses, setLiveStatuses] = useState<Record<string, FleetStatus>>({})
   const [errors, setErrors] = useState<Record<string, string>>({})
+  const [failures, setFailures] = useState<Record<string, number>>({})
   const [filter, setFilter] = useState<FilterKey>('all')
   const [search, setSearch] = useState('')
   const [selectedVehicleId, setSelectedVehicleId] = useState<string>(() => vehicles[0]?.id ?? '')
@@ -105,7 +107,16 @@ export function TrackingPage() {
         const next = { ...current }
         for (const entry of entries) {
           if (entry.error) next[entry.vehicle.id] = entry.error
-          else delete next[entry.vehicle.id]
+          else if (entry.state) delete next[entry.vehicle.id]
+        }
+        return next
+      })
+      // Đếm số lần lỗi liên tiếp: 1 lần poll lỗi không được làm gỡ trình phát camera.
+      setFailures((current) => {
+        const next = { ...current }
+        for (const entry of entries) {
+          if (entry.error) next[entry.vehicle.id] = (current[entry.vehicle.id] ?? 0) + 1
+          else if (entry.state) next[entry.vehicle.id] = 0
         }
         return next
       })
@@ -129,8 +140,8 @@ export function TrackingPage() {
     const driverId = activeTrip?.driver_id || vehicle.regular_driver_id
     const driver = data.profiles.find((profile) => profile.id === driverId)
     const warnings = vehicleWarnings(vehicle, status)
-    return { vehicle, state, status, activeTrip, driver, warnings, error: errors[vehicle.id] }
-  }), [data.profiles, data.trips, errors, liveStatuses, states, vehicles])
+    return { vehicle, state, status, activeTrip, driver, warnings, error: errors[vehicle.id], failures: failures[vehicle.id] ?? 0 }
+  }), [data.profiles, data.trips, errors, failures, liveStatuses, states, vehicles])
 
   const metrics = useMemo(() => ({
     total: fleetItems.length,
@@ -215,7 +226,7 @@ export function TrackingPage() {
             <FleetRealtimeMap items={fleetItems} selectedVehicleId={selected?.vehicle.id ?? ''} onSelect={setSelectedVehicleId} />
           </section>
 
-          {selected && <VehicleCommandDetail item={selected} />}
+          {selected && <VehicleCommandDetail key={selected.vehicle.id} item={selected} />}
         </main>
       </div>
 
@@ -265,12 +276,14 @@ function makeItemShape(item: {
   driver?: { full_name: string } | null
   warnings: string[]
   error?: string
+  failures?: number
 }) { return item }
 
 function VehicleCommandDetail({ item }: { item: ReturnType<typeof makeItemShape> }) {
   const [cameraMode, setCameraMode] = useState<'both' | 'front' | 'cabin'>('both')
   const status = STATUS_META[item.status]
-  const cameraDeviceOnline = (item.status === 'moving' || item.status === 'stopped') && !item.error
+  const camera = useCameraLifecycle(item.state, item.failures ?? 0)
+  const gatewayError = (item.failures ?? 0) >= GATEWAY_FAILURES_BEFORE_ERROR ? item.error ?? null : null
   const channels = (item.state?.channels ?? []).slice(0, 2)
   const front = channels[0] ?? null
   const cabin = channels[1] ?? null
@@ -305,128 +318,12 @@ function VehicleCommandDetail({ item }: { item: ReturnType<typeof makeItemShape>
         </div>
       </div>
       <div className={`fleet-dual-camera mode-${cameraMode}`}>
-        {(cameraMode === 'both' || cameraMode === 'front') && <CameraPanel key={`${item.vehicle.id}:front`} channel={front} title="Camera trước" gpsStatus={item.status} stateOnline={item.state?.online === true} gatewayError={item.error ?? null} />}
-        {(cameraMode === 'both' || cameraMode === 'cabin') && <CameraPanel key={`${item.vehicle.id}:cabin`} channel={cabin} title="Camera cabin" gpsStatus={item.status} stateOnline={item.state?.online === true} gatewayError={item.error ?? null} />}
+        {(cameraMode === 'both' || cameraMode === 'front') && <NavicomCameraPane key={`${item.vehicle.id}:front`} channel={front} title="Camera trước" liveness={camera.liveness} epoch={camera.epoch} waking={camera.waking} gatewayError={gatewayError} onReload={camera.reload} />}
+        {(cameraMode === 'both' || cameraMode === 'cabin') && <NavicomCameraPane key={`${item.vehicle.id}:cabin`} channel={cabin} title="Camera cabin" liveness={camera.liveness} epoch={camera.epoch} waking={camera.waking} gatewayError={gatewayError} onReload={camera.reload} />}
       </div>
+      {camera.liveness === 'online' && item.state?.online_since && <div className="camera-reconnect-note"><Icon name="activity" size={14} />Thiết bị online từ {formatDateTime(item.state.online_since)} · camera tự kết nối lại mỗi khi xe nổ máy.</div>}
     </div>
   </section>
-}
-
-// CameraPanel-auto-v2.11.14.2
-function CameraPanel({ channel, title, gpsStatus, stateOnline, gatewayError }: {
-  channel: NavicomVehicleState['channels'][number] | null
-  title: string
-  gpsStatus: FleetStatus
-  stateOnline: boolean
-  gatewayError: string | null
-}) {
-  const cardRef = useRef<HTMLElement | null>(null)
-  const [expanded, setExpanded] = useState(false)
-  const [forceLandscape, setForceLandscape] = useState(false)
-  const [streamError, setStreamError] = useState(false)
-
-  // Không lấy trạng thái GPS (moving/stopped/stale/offline) làm trạng thái camera.
-  // CMSV6 chỉ có dữ liệu GPS mới/cũ, còn online của từng kênh là tùy chọn.
-  // Khi Gateway cung cấp URL và không báo lỗi/kênh offline: tự động tải trình phát.
-  const streamKey = channel?.player_url || channel?.hls_url || channel?.snapshot_url || ''
-  const reportedOffline = channel?.online === false
-  const gatewayHealthy = !gatewayError
-  const streamAvailable = Boolean(streamKey)
-  const shouldLoad = gatewayHealthy && streamAvailable && !reportedOffline && !streamError
-
-  useEffect(() => {
-    // Chuyển kênh/đổi phiên video sẽ cho phép thử lại mà không cần nút thủ công.
-    setStreamError(false)
-  }, [streamKey])
-
-  useEffect(() => {
-    if (!expanded) return
-    const previousOverflow = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
-    const handleFullscreen = () => {
-      if (!fullscreenElement()) {
-        setExpanded(false)
-        setForceLandscape(false)
-      }
-    }
-    document.addEventListener('fullscreenchange', handleFullscreen)
-    document.addEventListener('webkitfullscreenchange', handleFullscreen as EventListener)
-    return () => {
-      document.body.style.overflow = previousOverflow
-      document.removeEventListener('fullscreenchange', handleFullscreen)
-      document.removeEventListener('webkitfullscreenchange', handleFullscreen as EventListener)
-    }
-  }, [expanded])
-
-  const toggleFullscreen = async () => {
-    if (expanded) {
-      await exitLandscapeFullscreen()
-      setExpanded(false)
-      setForceLandscape(false)
-      return
-    }
-    setExpanded(true)
-    const element = cardRef.current
-    if (!element) return
-    const result = await enterLandscapeFullscreen(element)
-    setForceLandscape(!result.orientationLocked)
-  }
-
-  // Phân biệt rõ offline do Navicom xác nhận với Gateway/GPS không phản hồi.
-  let cameraTitle = 'Chưa có tín hiệu camera'
-  let cameraDetail = 'Hiện chưa có đường dẫn phát video cho kênh này.'
-  if (gatewayError) {
-    cameraTitle = 'Không kết nối được Navicom Gateway'
-    cameraDetail = 'Chưa xác minh được trạng thái camera. Không đồng nghĩa xe offline.'
-  } else if (reportedOffline) {
-    cameraTitle = 'Camera offline'
-    cameraDetail = 'Hệ thống Navicom báo kênh camera này ngoại tuyến.'
-  } else if (streamError) {
-    cameraTitle = 'Không tải được camera'
-    cameraDetail = 'Luồng phát gặp lỗi hoặc bị ngắt. Trạng thái thiết bị cần được xác minh.'
-  }
-
-  // `stateOnline` chỉ là cờ GPS để tương thích callsite hiện tại, không dùng chặn video.
-  // `gpsStatus` chỉ mô tả GPS, KHÔNG dùng quyết định camera offline.
-  void gpsStatus
-  void stateOnline
-
-  return <article ref={cardRef} className={`fleet-camera-card ${expanded ? 'camera-landscape-expanded' : ''} ${forceLandscape ? 'camera-force-landscape' : ''}`}>
-    <header>
-      <div><span className={`fleet-camera-dot ${reportedOffline ? 'offline' : shouldLoad ? channel?.online === true ? 'online' : 'unknown' : 'unknown'}`} /><strong>{title}</strong></div>
-      <div className="fleet-camera-actions">
-        {shouldLoad && channel?.external_url && <a href={channel.external_url} target="_blank" rel="noopener noreferrer">Mở riêng</a>}
-        {shouldLoad && <button type="button" onClick={() => void toggleFullscreen()}>{expanded ? 'Thoát' : 'Phóng to ngang'}</button>}
-      </div>
-    </header>
-    <div className={`fleet-camera-frame ${!shouldLoad ? 'is-unverified' : ''}`}>
-      {shouldLoad
-        ? (channel?.player_url
-          ? <iframe
-              key={streamKey}
-              title={title}
-              src={channel.player_url}
-              loading="eager"
-              allow="autoplay; fullscreen; picture-in-picture"
-              allowFullScreen
-              // Không cho phép alert()/confirm() từ iframe Navicom (popup cũ gây khó chịu).
-              // CMSV6 vẫn được phép chạy JS, tải nội dung và trình chiếu.
-              sandbox="allow-scripts allow-same-origin allow-forms allow-presentation"
-              onError={() => setStreamError(true)}
-            />
-          : channel?.hls_url
-            ? <video key={streamKey} src={channel.hls_url} controls autoPlay muted playsInline onError={() => setStreamError(true)} />
-            : channel?.snapshot_url
-              ? <img key={streamKey} src={channel.snapshot_url} alt={title} onError={() => setStreamError(true)} />
-              : null)
-        : <div className="fleet-camera-unavailable fleet-camera-pending">
-            <Icon name="camera" size={24} />
-            <strong>{cameraTitle}</strong>
-            <span>{cameraDetail}</span>
-          </div>}
-    </div>
-    {expanded && forceLandscape && <div className="camera-rotate-hint">Đang hiển thị ngang để xem camera rõ hơn</div>}
-  </article>
 }
 
 function FleetRealtimeMap({ items, selectedVehicleId, onSelect }: { items: Array<ReturnType<typeof makeItemShape>>; selectedVehicleId: string; onSelect: (id: string) => void }) {

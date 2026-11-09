@@ -39,7 +39,7 @@
 .report-comparison-grid small.bad { background: var(--danger-bg); color: var(--danger); }
 
 /* Khối Ban Giám đốc */
-.executive-report-shell { display: grid; gap: 14px; padding: 18px; border-radius: var(--r-lg); background: var(--ink-900); color: #fff; background-image: radial-gradient(70% 90% at 100% 0%, rgba(92,196,174,.16), transparent 60%); box-shadow: var(--sh-2); }
+.executive-report-shell { display: grid; gap: 14px; padding: 18px; border-radius: var(--r-lg); background: var(--ink-900); color: #fff; background-image: radial-gradient(70% 90% at 100% 0%, rgba(111,208,245,.16), transparent 60%); box-shadow: var(--sh-2); }
 .executive-report-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; }
 .executive-report-header > div { display: grid; gap: 4px; max-width: 70ch; }
 .executive-report-header span { font-size: var(--fs-xs); font-weight: 700; letter-spacing: .1em; color: var(--brand-300); }

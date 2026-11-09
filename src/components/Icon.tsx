@@ -10,7 +10,7 @@ export type IconName =
   | 'clock' | 'pin' | 'flag' | 'map' | 'phone' | 'file' | 'paperclip' | 'camera' | 'image' | 'calendar' | 'fuel' | 'money' | 'shield'
   | 'zap' | 'inbox' | 'download' | 'copy' | 'print' | 'logout' | 'home' | 'menu' | 'chevron-right' | 'chevron-left' | 'arrow-right'
   | 'mic' | 'cloud-off' | 'gauge' | 'route' | 'hospital' | 'eye' | 'list' | 'lock' | 'navigation' | 'play' | 'road' | 'parking' | 'droplet'
-  | 'smartphone' | 'monitor' | 'activity' | 'trash' | 'edit' | 'upload' | 'sparkles'
+  | 'smartphone' | 'monitor' | 'activity' | 'trash' | 'edit' | 'upload' | 'sparkles' | 'link'
 
 const PATHS: Record<IconName, ReactElement> = {
   dashboard: <><rect x="3" y="3" width="7" height="9" rx="1.5" /><rect x="14" y="3" width="7" height="5" rx="1.5" /><rect x="14" y="12" width="7" height="9" rx="1.5" /><rect x="3" y="16" width="7" height="5" rx="1.5" /></>,
@@ -80,6 +80,7 @@ const PATHS: Record<IconName, ReactElement> = {
   trash: <><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1l1-13M9 7V4h6v3" /></>,
   edit: <><path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16z" /><path d="m13.5 6.5 4 4" /></>,
   upload: <><path d="M12 21V9M7 14l5-5 5 5M4 3h16" /></>,
+  link: <><path d="M10 14a4.5 4.5 0 0 0 6.4 0l3-3a4.5 4.5 0 0 0-6.4-6.4l-1.2 1.2" /><path d="M14 10a4.5 4.5 0 0 0-6.4 0l-3 3a4.5 4.5 0 0 0 6.4 6.4l1.2-1.2" /></>,
   sparkles: <><path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5 18 18M6 18l2.5-2.5M15.5 8.5 18 6" /></>,
 }
 

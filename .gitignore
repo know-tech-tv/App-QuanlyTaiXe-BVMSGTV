@@ -3,3 +3,11 @@ local-browser-profile/
 probe-output/
 .env
 *.har
+
+dist/
+*.tsbuildinfo
+.service/
+.certs/*.pem
+!.certs/msg-car-cert.pem
+.env.local
+.env.navicom.local

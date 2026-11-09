@@ -9,9 +9,10 @@
 @import './styles/driver.css';
 @import './styles/login.css';
 @import './styles/tracking.css';
+@import './styles/theme-2026.css';
 
 
 /* v2.10.3 Navicom local diagnostics */
-.navicom-mode-note{display:flex;align-items:flex-start;gap:8px;margin:10px 0;padding:9px 11px;border:1px solid #d9e8e4;border-radius:12px;background:#f3f9f7;color:#55726a;font-size:11px;line-height:1.5}
-.navicom-mode-note svg{flex:0 0 auto;margin-top:1px;color:#0f8269}
+.navicom-mode-note{display:flex;align-items:flex-start;gap:8px;margin:10px 0;padding:9px 11px;border:1px solid #d8e0f3;border-radius:12px;background:#f2f5fd;color:#4f5784;font-size:11px;line-height:1.5}
+.navicom-mode-note svg{flex:0 0 auto;margin-top:1px;color:#2f5fc4}
 
